@@ -4,12 +4,20 @@ import 'package:google_fonts/google_fonts.dart';
 import 'models/task_model.dart';
 import 'ui/task_list_screen.dart';
 
+import 'package:permission_handler/permission_handler.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
   // Initialize Hive
   await Hive.initFlutter();
   Hive.registerAdapter(TaskAdapter()); // We will need to generate this
+  
+  // Request permissions
+  await [
+    Permission.notification,
+    Permission.scheduleExactAlarm,
+  ].request();
   
   runApp(const MyApp());
 }

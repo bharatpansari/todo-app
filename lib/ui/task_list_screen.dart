@@ -4,6 +4,7 @@ import '../../models/task_model.dart';
 import '../../repositories/task_repository.dart';
 import 'add_edit_task_screen.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import '../../services/native_bridge.dart';
 
 class TaskListScreen extends StatefulWidget {
   const TaskListScreen({super.key});
@@ -68,7 +69,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(LucideIcons.listTodo, size: 64, color: Colors.grey[300]),
+                    Icon(LucideIcons.clipboardList, size: 64, color: Colors.grey[300]),
                     const SizedBox(height: 16),
                     Text("No tasks yet!", style: TextStyle(color: Colors.grey[500], fontSize: 18)),
                   ],
