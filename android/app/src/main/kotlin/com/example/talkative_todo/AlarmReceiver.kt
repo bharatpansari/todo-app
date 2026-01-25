@@ -41,10 +41,17 @@ class AlarmReceiver : BroadcastReceiver() {
             putExtra("ttsVolume", ttsVolume)
         }
         
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            context.startForegroundService(serviceIntent)
-        } else {
-            context.startService(serviceIntent)
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.startForegroundService(serviceIntent)
+            } else {
+                context.startService(serviceIntent)
+            }
+        } finally {
+            // Release WakeLock after service starts - foreground service handles keeping device awake
+            if (wakeLock.isHeld) {
+                wakeLock.release()
+            }
         }
         
         // Notify Flutter about the alarm (for recurring task auto-reschedule)

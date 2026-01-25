@@ -18,7 +18,7 @@ import org.json.JSONObject
 import java.util.Locale
 
 class MainActivity: FlutterActivity() {
-    private val CHANNEL = "com.antigravity.todo/alarm"
+    private val CHANNEL = "com.example.talkative_todo/alarm"
     private var testTts: TextToSpeech? = null
 
     companion object {
@@ -163,6 +163,14 @@ class MainActivity: FlutterActivity() {
                 params.putFloat(TextToSpeech.Engine.KEY_PARAM_VOLUME, volume)
                 
                 testTts?.speak(text, TextToSpeech.QUEUE_FLUSH, params, "test_utterance")
+                
+                // Auto-cleanup test TTS after 10 seconds
+                mainHandler.postDelayed({
+                    testTts?.stop()
+                    testTts?.shutdown()
+                    testTts = null
+                    Log.d("MainActivity", "Auto-cleaned up test TTS instance")
+                }, 10000)
                 
                 Log.d("MainActivity", "Returning languageStatus to Flutter: $languageStatus")
                 

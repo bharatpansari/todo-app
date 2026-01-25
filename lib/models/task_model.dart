@@ -139,8 +139,8 @@ class Task extends HiveObject {
     final now = DateTime.now();
     DateTime next = scheduledTime;
     
-    // Make sure we're calculating from a time that's at least now
-    while (next.isBefore(now) || next.isAtSameMomentAs(scheduledTime)) {
+    // Keep advancing until next occurrence is strictly in the future
+    while (!next.isAfter(now)) {
       switch (repeatType) {
         case RepeatType.daily:
           next = next.add(const Duration(days: 1));

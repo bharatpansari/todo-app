@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/services.dart';
 import '../models/task_model.dart';
 import '../repositories/settings_repository.dart';
@@ -12,7 +14,7 @@ typedef TaskSnoozedCallback = void Function(String taskId, int snoozeMinutes);
 typedef TaskMarkedDoneCallback = void Function(String taskId);
 
 class NativeBridge {
-  static const MethodChannel _channel = MethodChannel('com.antigravity.todo/alarm');
+  static const MethodChannel _channel = MethodChannel('com.example.talkative_todo/alarm');
   static AlarmFiredCallback? _alarmFiredCallback;
   static TaskSnoozedCallback? _taskSnoozedCallback;
   static TaskMarkedDoneCallback? _taskMarkedDoneCallback;
@@ -140,28 +142,13 @@ class NativeBridge {
       });
 
       // Cancel all potential pre-reminders
-      // We iterate through what IS in the task, but for safety (if edited), 
-      // we might want to cancel a broad range or just rely on the current list.
-      // Since we don't track old pre-reminders easily, we'll iterate the current ones
-      // PLUS standard ones just in case? No, let's trust the task object passed in.
-      // Actually, to be safe against changed reminders, we should probably modify Kotlin side
-      // to cancel all alarms for a taskId prefix, but for now we follow the plan:
-      // iterate known pre-reminders.
-      for (final minutes in task.preReminders) {
+      // Combine task's current pre-reminders with standard intervals to ensure
+      // complete cancellation even if user edited/removed some reminders
+      final allPreReminders = {...task.preReminders, 15, 30, 60};
+      for (final minutes in allPreReminders) {
         await _channel.invokeMethod('cancelAlarm', {
           'taskId': task.id,
           'requestCode': minutes,
-        });
-      }
-      // Also allow passing just ID for legacy calls if needed, but here we require Task object
-      // to know which pre-reminders to cancel. 
-      // User Note: If you remove a pre-reminder (e.g. 15m) and save, we need to ensure 
-      // the old 15m alarm is cancelled. This logic assumes 'task' has the OLD list if called before update?
-      // Or we should just blindly cancel common intervals (15, 30, 60).
-      for (final m in [15, 30, 60]) {
-         await _channel.invokeMethod('cancelAlarm', {
-          'taskId': task.id,
-          'requestCode': m,
         });
       }
 
@@ -252,20 +239,15 @@ class NativeBridge {
       // Take only top 3
       final top3 = upcomingTasks.take(3).toList();
       
-      // Convert to JSON format for widget
+      // Convert to JSON format for widget using proper encoding
       final tasksJson = top3.map((t) => {
         'id': t.id,
         'title': t.title,
         'time': t.scheduledTime.toIso8601String(),
       }).toList();
       
-      // Use proper JSON encoding
-      final jsonString = tasksJson.map((t) => 
-        '{"id":"${t['id']}","title":"${t['title']?.toString().replaceAll('"', '\\"') ?? ''}","time":"${t['time']}"}'
-      ).toList();
-      
       await _channel.invokeMethod('updateWidget', {
-        'tasksJson': '[${jsonString.join(',')}]',
+        'tasksJson': jsonEncode(tasksJson),
       });
       
       print("Updated home widget with ${top3.length} tasks");
