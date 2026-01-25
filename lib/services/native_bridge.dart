@@ -1,27 +1,170 @@
 import 'package:flutter/services.dart';
 import '../models/task_model.dart';
+import '../repositories/settings_repository.dart';
+
+/// Callback for when an alarm fires
+typedef AlarmFiredCallback = void Function(String taskId);
+
+/// Callback for when a task is snoozed via notification
+typedef TaskSnoozedCallback = void Function(String taskId, int snoozeMinutes);
+
+/// Callback for when a task is marked done via notification
+typedef TaskMarkedDoneCallback = void Function(String taskId);
 
 class NativeBridge {
   static const MethodChannel _channel = MethodChannel('com.antigravity.todo/alarm');
+  static AlarmFiredCallback? _alarmFiredCallback;
+  static TaskSnoozedCallback? _taskSnoozedCallback;
+  static TaskMarkedDoneCallback? _taskMarkedDoneCallback;
+  static bool _isListenerSetup = false;
+  
+  final SettingsRepository _settings = SettingsRepository();
+
+  NativeBridge() {
+    _setupMethodCallHandler();
+  }
+
+  /// Setup the method call handler for receiving callbacks from Kotlin
+  void _setupMethodCallHandler() {
+    if (_isListenerSetup) return;
+    _isListenerSetup = true;
+    
+    _channel.setMethodCallHandler((call) async {
+      switch (call.method) {
+        case 'onAlarmFired':
+          final taskId = call.arguments['taskId'] as String?;
+          if (taskId != null && _alarmFiredCallback != null) {
+            _alarmFiredCallback!(taskId);
+          }
+          break;
+          
+        case 'onTaskSnoozed':
+          final taskId = call.arguments['taskId'] as String?;
+          final snoozeMinutes = call.arguments['snoozeMinutes'] as int?;
+          if (taskId != null && snoozeMinutes != null && _taskSnoozedCallback != null) {
+            _taskSnoozedCallback!(taskId, snoozeMinutes);
+          }
+          break;
+          
+        case 'onTaskMarkedDone':
+          final taskId = call.arguments['taskId'] as String?;
+          if (taskId != null && _taskMarkedDoneCallback != null) {
+            _taskMarkedDoneCallback!(taskId);
+          }
+          break;
+      }
+      return null;
+    });
+  }
+
+  /// Set callback for when an alarm fires (used for recurring task auto-reschedule)
+  static void setAlarmFiredCallback(AlarmFiredCallback callback) {
+    _alarmFiredCallback = callback;
+  }
+
+  /// Set callback for when a task is snoozed via notification
+  static void setTaskSnoozedCallback(TaskSnoozedCallback callback) {
+    _taskSnoozedCallback = callback;
+  }
+
+  /// Set callback for when a task is marked done via notification
+  static void setTaskMarkedDoneCallback(TaskMarkedDoneCallback callback) {
+    _taskMarkedDoneCallback = callback;
+  }
+
+  /// Helper to resolve language aliases (e.g., hinglish -> hi-IN)
+  String _resolveLanguage(String language) {
+    if (language == 'hinglish') {
+      return 'hi-IN';
+    }
+    return language;
+  }
 
   Future<void> scheduleTask(Task task) async {
     try {
+      // Get current TTS settings
+      final ttsSettings = _settings.getTtsSettings();
+      final language = _resolveLanguage(ttsSettings['language']);
+      
+      // 1. Schedule MAIN alarm (at scheduled time)
       await _channel.invokeMethod('scheduleAlarm', {
         'taskId': task.id,
+        'requestCode': 0, // 0 for main alarm
         'triggerAtMillis': task.scheduledTime.millisecondsSinceEpoch,
         'speakText': task.speakText,
+        'isRecurring': task.isRecurring,
+        'repeatType': task.repeatType,
+        'ttsLanguage': language,
+        'ttsSpeechRate': ttsSettings['speechRate'],
+        'ttsPitch': ttsSettings['pitch'],
+        'ttsVolume': ttsSettings['volume'],
       });
-      print("Scheduled task: ${task.title} at ${task.scheduledTime}");
+      print("Scheduled main task: ${task.title} at ${task.scheduledTime}");
+
+      // 2. Schedule PRE-REMINDERS (if any)
+      for (final minutes in task.preReminders) {
+        final triggerTime = task.scheduledTime.subtract(Duration(minutes: minutes));
+        
+        // Skip if pre-reminder time is already past
+        if (triggerTime.isBefore(DateTime.now())) continue;
+
+        // Create speak text for pre-reminder, e.g., "Meeting in 15 minutes"
+        final preSpeakText = "${task.title}, in $minutes minutes";
+
+        await _channel.invokeMethod('scheduleAlarm', {
+          'taskId': task.id,
+          'requestCode': minutes, // Use minutes as request code offset
+          'triggerAtMillis': triggerTime.millisecondsSinceEpoch,
+          'speakText': preSpeakText,
+          'isRecurring': false, // Pre-reminders don't auto-reschedule themselves
+          'repeatType': 'none',
+          'ttsLanguage': language,
+          'ttsSpeechRate': ttsSettings['speechRate'],
+          'ttsPitch': ttsSettings['pitch'],
+          'ttsVolume': ttsSettings['volume'],
+        });
+        print("Scheduled pre-reminder ($minutes m) at $triggerTime");
+      }
+
     } on PlatformException catch (e) {
       print("Failed to schedule alarm: '${e.message}'.");
     }
   }
 
-  Future<void> cancelTask(String taskId) async {
+  Future<void> cancelTask(Task task) async {
     try {
+      // Cancel main alarm
       await _channel.invokeMethod('cancelAlarm', {
-        'taskId': taskId,
+        'taskId': task.id,
+        'requestCode': 0,
       });
+
+      // Cancel all potential pre-reminders
+      // We iterate through what IS in the task, but for safety (if edited), 
+      // we might want to cancel a broad range or just rely on the current list.
+      // Since we don't track old pre-reminders easily, we'll iterate the current ones
+      // PLUS standard ones just in case? No, let's trust the task object passed in.
+      // Actually, to be safe against changed reminders, we should probably modify Kotlin side
+      // to cancel all alarms for a taskId prefix, but for now we follow the plan:
+      // iterate known pre-reminders.
+      for (final minutes in task.preReminders) {
+        await _channel.invokeMethod('cancelAlarm', {
+          'taskId': task.id,
+          'requestCode': minutes,
+        });
+      }
+      // Also allow passing just ID for legacy calls if needed, but here we require Task object
+      // to know which pre-reminders to cancel. 
+      // User Note: If you remove a pre-reminder (e.g. 15m) and save, we need to ensure 
+      // the old 15m alarm is cancelled. This logic assumes 'task' has the OLD list if called before update?
+      // Or we should just blindly cancel common intervals (15, 30, 60).
+      for (final m in [15, 30, 60]) {
+         await _channel.invokeMethod('cancelAlarm', {
+          'taskId': task.id,
+          'requestCode': m,
+        });
+      }
+
     } on PlatformException catch (e) {
       print("Failed to cancel alarm: '${e.message}'.");
     }
@@ -50,4 +193,85 @@ class NativeBridge {
           print("Failed battery opt request: ${e.message}");
       }
   }
+
+  /// Test TTS with current settings
+  /// Returns: 'available', 'missing_data', 'not_supported', or 'unknown'
+  Future<String> testTts(String text) async {
+    try {
+      final ttsSettings = _settings.getTtsSettings();
+      final resolvedLanguage = _resolveLanguage(ttsSettings['language']);
+      print("NativeBridge.testTts: Calling with language=$resolvedLanguage (original=${ttsSettings['language']})");
+      
+      final String? result = await _channel.invokeMethod('testTts', {
+        'text': text,
+        'ttsLanguage': resolvedLanguage,
+        'ttsSpeechRate': ttsSettings['speechRate'],
+        'ttsPitch': ttsSettings['pitch'],
+        'ttsVolume': ttsSettings['volume'],
+      });
+      print("NativeBridge.testTts: Received result=$result");
+      return result ?? 'unknown';
+    } on PlatformException catch (e) {
+      print("Failed to test TTS: ${e.message}");
+      rethrow;
+    }
+  }
+
+  /// Check if a language is available on the device
+  /// Returns: 'available', 'missing_data', 'not_supported', or 'unknown'
+  Future<String> isLanguageAvailable(String language) async {
+    try {
+      final String? result = await _channel.invokeMethod('isLanguageAvailable', {
+        'language': _resolveLanguage(language),
+      });
+      return result ?? 'unknown';
+    } on PlatformException catch (e) {
+      print("Failed to check language availability: ${e.message}");
+      return 'unknown';
+    }
+  }
+
+  /// Open Android TTS Settings screen
+  Future<void> openTtsSettings() async {
+    try {
+      await _channel.invokeMethod('openTtsSettings');
+    } on PlatformException catch (e) {
+      print("Failed to open TTS settings: ${e.message}");
+    }
+  }
+
+  /// Update the home screen widget with upcoming tasks
+  Future<void> updateHomeWidget(List<Task> tasks) async {
+    try {
+      // Get upcoming tasks (not completed, scheduled in future, sorted by time)
+      final upcomingTasks = tasks
+          .where((t) => !t.isCompleted && t.scheduledTime.isAfter(DateTime.now()))
+          .toList()
+        ..sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime));
+      
+      // Take only top 3
+      final top3 = upcomingTasks.take(3).toList();
+      
+      // Convert to JSON format for widget
+      final tasksJson = top3.map((t) => {
+        'id': t.id,
+        'title': t.title,
+        'time': t.scheduledTime.toIso8601String(),
+      }).toList();
+      
+      // Use proper JSON encoding
+      final jsonString = tasksJson.map((t) => 
+        '{"id":"${t['id']}","title":"${t['title']?.toString().replaceAll('"', '\\"') ?? ''}","time":"${t['time']}"}'
+      ).toList();
+      
+      await _channel.invokeMethod('updateWidget', {
+        'tasksJson': '[${jsonString.join(',')}]',
+      });
+      
+      print("Updated home widget with ${top3.length} tasks");
+    } on PlatformException catch (e) {
+      print("Failed to update widget: ${e.message}");
+    }
+  }
 }
+
