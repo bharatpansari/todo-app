@@ -12,13 +12,13 @@ import android.util.Log
 import org.json.JSONObject
 
 /**
- * Handles snooze and mark-done actions from the notification.
+ * Handles snooze and dismiss actions from the notification.
  */
 class SnoozeReceiver : BroadcastReceiver() {
 
     companion object {
         const val ACTION_SNOOZE = "com.example.talkative_todo.ACTION_SNOOZE"
-        const val ACTION_MARK_DONE = "com.example.talkative_todo.ACTION_MARK_DONE"
+        const val ACTION_DISMISS = "com.example.talkative_todo.ACTION_DISMISS"
         
         const val EXTRA_TASK_ID = "taskId"
         const val EXTRA_SPEAK_TEXT = "speakText"
@@ -54,10 +54,9 @@ class SnoozeReceiver : BroadcastReceiver() {
                     notifyFlutterSnoozed(taskId, snoozeMinutes)
                 }
             }
-            ACTION_MARK_DONE -> {
-                if (taskId != null) {
-                    notifyFlutterMarkDone(taskId)
-                }
+            ACTION_DISMISS -> {
+                // Dismiss only stops the alarm (already done above), no Flutter callback needed
+                Log.d("SnoozeReceiver", "Task $taskId dismissed without marking complete")
             }
         }
     }
@@ -176,14 +175,5 @@ class SnoozeReceiver : BroadcastReceiver() {
         }, 200)
     }
 
-    private fun notifyFlutterMarkDone(taskId: String) {
-        Handler(Looper.getMainLooper()).postDelayed({
-            try {
-                MainActivity.notifyFlutterMarkDone(taskId)
-                Log.d("SnoozeReceiver", "Notified Flutter about mark done for: $taskId")
-            } catch (e: Exception) {
-                Log.e("SnoozeReceiver", "Failed to notify Flutter about mark done: ${e.message}")
-            }
-        }, 200)
-    }
+
 }

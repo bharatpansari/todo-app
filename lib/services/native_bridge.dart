@@ -48,12 +48,13 @@ class NativeBridge {
           }
           break;
           
-        case 'onTaskMarkedDone':
-          final taskId = call.arguments['taskId'] as String?;
-          if (taskId != null && _taskMarkedDoneCallback != null) {
-            _taskMarkedDoneCallback!(taskId);
-          }
-          break;
+        // DEPRECATED: Mark-done callback removed - now using "Dismiss" button
+        // case 'onTaskMarkedDone':
+        //   final taskId = call.arguments['taskId'] as String?;
+        //   if (taskId != null && _taskMarkedDoneCallback != null) {
+        //     _taskMarkedDoneCallback!(taskId);
+        //   }
+        //   break;
       }
       return null;
     });
@@ -69,10 +70,10 @@ class NativeBridge {
     _taskSnoozedCallback = callback;
   }
 
-  /// Set callback for when a task is marked done via notification
-  static void setTaskMarkedDoneCallback(TaskMarkedDoneCallback callback) {
-    _taskMarkedDoneCallback = callback;
-  }
+  // DEPRECATED: Mark-done callback removed - now using "Dismiss" button
+  // static void setTaskMarkedDoneCallback(TaskMarkedDoneCallback callback) {
+  //   _taskMarkedDoneCallback = callback;
+  // }
 
   /// Helper to resolve language aliases (e.g., hinglish -> hi-IN)
   String _resolveLanguage(String language) {

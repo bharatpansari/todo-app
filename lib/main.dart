@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'firebase_options.dart';
 import 'models/task_model.dart';
 import 'models/category_model.dart';
 import 'repositories/category_repository.dart';
@@ -8,11 +11,15 @@ import 'repositories/task_repository.dart';
 import 'repositories/settings_repository.dart';
 import 'services/native_bridge.dart';
 import 'ui/task_list_screen.dart';
+import 'ui/login_screen.dart';
 
 import 'package:permission_handler/permission_handler.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize Firebase
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   
   // Initialize Hive
   await Hive.initFlutter();
@@ -34,10 +41,10 @@ void main() async {
     await taskRepository.handleTaskSnoozed(taskId, snoozeMinutes);
   });
   
-  // Setup mark-done callback
-  NativeBridge.setTaskMarkedDoneCallback((taskId) async {
-    await taskRepository.handleTaskMarkedDone(taskId);
-  });
+  // DEPRECATED: Mark-done callback removed - now using manual checkbox for completion
+  // NativeBridge.setTaskMarkedDoneCallback((taskId) async {
+  //   await taskRepository.handleTaskMarkedDone(taskId);
+  // });
   
   // Initialize bridge to setup method handler
   NativeBridge();
@@ -81,7 +88,7 @@ class MyApp extends StatelessWidget {
               centerTitle: false,
               titleTextStyle: TextStyle(
                   color: Colors.black87, 
-                  fontSize: 24, 
+                  fontSize: 20, 
                   fontWeight: FontWeight.bold,
                   fontFamily: 'Outfit'
               ),
@@ -115,7 +122,9 @@ class MyApp extends StatelessWidget {
             ),
 
           ),
-          home: const TaskListScreen(),
+          home: FirebaseAuth.instance.currentUser == null 
+              ? const LoginScreen() 
+              : const TaskListScreen(),
         );
       }
     );

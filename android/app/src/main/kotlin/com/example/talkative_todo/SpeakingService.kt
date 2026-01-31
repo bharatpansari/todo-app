@@ -212,13 +212,13 @@ class SpeakingService : Service(), TextToSpeech.OnInitListener {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         
-        // Mark Done action
-        val doneIntent = Intent(this, SnoozeReceiver::class.java).apply {
-            action = SnoozeReceiver.ACTION_MARK_DONE
+        // Dismiss action (stops alarm without marking task complete)
+        val dismissIntent = Intent(this, SnoozeReceiver::class.java).apply {
+            action = SnoozeReceiver.ACTION_DISMISS
             putExtra(SnoozeReceiver.EXTRA_TASK_ID, taskId)
         }
-        val donePendingIntent = PendingIntent.getBroadcast(
-            this, requestCodeBase + 3, doneIntent, 
+        val dismissPendingIntent = PendingIntent.getBroadcast(
+            this, requestCodeBase + 3, dismissIntent, 
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         
@@ -242,7 +242,7 @@ class SpeakingService : Service(), TextToSpeech.OnInitListener {
         if (taskId != null) {
             builder.addAction(android.R.drawable.ic_menu_recent_history, "Snooze 5m", snooze5PendingIntent)
                    .addAction(android.R.drawable.ic_menu_recent_history, "Snooze 10m", snooze10PendingIntent)
-                   .addAction(android.R.drawable.ic_menu_save, "Done", donePendingIntent)
+                   .addAction(android.R.drawable.ic_menu_close_clear_cancel, "Dismiss", dismissPendingIntent)
         } else {
             // Fallback to simple stop button if no taskId
             builder.addAction(android.R.drawable.ic_media_pause, "Stop", stopPendingIntent)

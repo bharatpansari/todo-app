@@ -8,9 +8,11 @@ import 'add_edit_task_screen.dart';
 import 'stats_dashboard_screen.dart';
 import 'widgets/task_tile.dart';
 import 'tts_settings_screen.dart';
+import 'login_screen.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../services/native_bridge.dart';
 import '../../services/export_import_service.dart';
+import '../../services/auth_service.dart';
 import '../../repositories/settings_repository.dart';
 
 class TaskListScreen extends StatefulWidget {
@@ -70,6 +72,12 @@ class _TaskListScreenState extends State<TaskListScreen> {
 
   Future<void> _deleteTask(Task task) async {
     await _repository.deleteTask(task);
+    _loadData();
+  }
+
+  Future<void> _toggleTaskCompletion(Task task, bool isCompleted) async {
+    task.isCompleted = isCompleted;
+    await _repository.updateTask(task);
     _loadData();
   }
   
@@ -349,6 +357,8 @@ class _TaskListScreenState extends State<TaskListScreen> {
       builder: (context) {
         final settingsRepo = SettingsRepository();
         return AlertDialog(
+          insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          scrollable: true,
           title: const Text("Settings"),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -704,7 +714,21 @@ class _TaskListScreenState extends State<TaskListScreen> {
             onPressed: () {
                _showSettingsDialog();
             },
-          )
+          ),
+          // Sign out button
+          IconButton(
+            icon: const Icon(Icons.logout),
+            tooltip: 'Sign Out',
+            onPressed: () async {
+              await AuthService().signOut();
+              if (context.mounted) {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const LoginScreen()),
+                );
+              }
+            },
+          ),
         ],
       ),
       body: _isLoading 
@@ -842,6 +866,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
                             category: category,
                             onDelete: () => _deleteTask(task),
                             onRefresh: _loadData,
+                            onToggleComplete: (isCompleted) => _toggleTaskCompletion(task, isCompleted),
                           );
                         },
                       ),

@@ -10,6 +10,7 @@ class TaskTile extends StatefulWidget {
   final Category? category;
   final VoidCallback onDelete;
   final VoidCallback onRefresh;
+  final void Function(bool isCompleted)? onToggleComplete;
 
   const TaskTile({
     super.key,
@@ -17,6 +18,7 @@ class TaskTile extends StatefulWidget {
     this.category,
     required this.onDelete,
     required this.onRefresh,
+    this.onToggleComplete,
   });
 
   @override
@@ -89,18 +91,16 @@ class _TaskTileState extends State<TaskTile> {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Icon / Status
-                    Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: isPast ? Theme.of(context).disabledColor.withOpacity(0.1) : Theme.of(context).primaryColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
+                    // Checkbox for completion
+                    Checkbox(
+                      value: task.isCompleted,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(4),
                       ),
-                      child: Icon(
-                        isPast ? LucideIcons.checkCircle : LucideIcons.clock,
-                        color: isPast ? Theme.of(context).disabledColor : Theme.of(context).primaryColor,
-                      ),
+                      activeColor: Theme.of(context).primaryColor,
+                      onChanged: widget.onToggleComplete != null
+                          ? (value) => widget.onToggleComplete!(value ?? false)
+                          : null,
                     ),
                     const SizedBox(width: 16),
                     

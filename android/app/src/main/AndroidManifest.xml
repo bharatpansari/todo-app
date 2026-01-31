@@ -39,7 +39,7 @@
         <receiver android:name=".SnoozeReceiver" android:exported="false">
             <intent-filter>
                 <action android:name="com.example.talkative_todo.ACTION_SNOOZE" />
-                <action android:name="com.example.talkative_todo.ACTION_MARK_DONE" />
+                <action android:name="com.example.talkative_todo.ACTION_DISMISS" />
             </intent-filter>
         </receiver>
         <receiver android:name=".BootReceiver" android:exported="true">

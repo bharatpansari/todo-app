@@ -170,7 +170,7 @@ class MainActivity: FlutterActivity() {
                     testTts?.shutdown()
                     testTts = null
                     Log.d("MainActivity", "Auto-cleaned up test TTS instance")
-                }, 10000)
+                }, 10000L)
                 
                 Log.d("MainActivity", "Returning languageStatus to Flutter: $languageStatus")
                 

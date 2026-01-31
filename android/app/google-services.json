@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "978793568422",
+    "firebase_url": "https://takative-todo-app-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "takative-todo-app",
+    "storage_bucket": "takative-todo-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:978793568422:android:40694af90025e4cabbbc67",
+        "android_client_info": {
+          "package_name": "com.example.talkative_todo"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "978793568422-kgsime7u5lmc1dguo0apab97233chqp1.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.talkative_todo",
+            "certificate_hash": "9a80338f58db77581e88fba3f6d7ecfa5984c5bc"
+          }
+        },
+        {
+          "client_id": "978793568422-s5ldllmo9c28rha8e52lpluv1c21u2t9.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAEjGAQZm1XlkQyVyng2C9ZXZCQ9QbdWII"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "978793568422-s5ldllmo9c28rha8e52lpluv1c21u2t9.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "978793568422-rqvgoc5mdhepdocc5lukras40gikue3b.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.antigravity.talkativeTodo"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
