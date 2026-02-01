@@ -24,6 +24,9 @@ class TaskWidgetProvider : AppWidgetProvider() {
         const val ACTION_REFRESH = "com.example.talkative_todo.WIDGET_REFRESH"
         const val PREFS_NAME = "widget_prefs"
         const val PREFS_TASKS_KEY = "widget_tasks"
+        const val ACTION_ADD_TASK = "com.example.talkative_todo.ADD_TASK"
+        const val ACTION_VIEW_TODAY = "com.example.talkative_todo.VIEW_TODAY"
+        const val ACTION_VIEW_INBOX = "com.example.talkative_todo.VIEW_INBOX"
         
         /**
          * Trigger widget update from anywhere in the app.
@@ -94,6 +97,39 @@ class TaskWidgetProvider : AppWidgetProvider() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         views.setOnClickPendingIntent(R.id.refresh_button, refreshPendingIntent)
+
+        // Add Button
+        val addIntent = Intent(context, MainActivity::class.java).apply {
+            action = ACTION_ADD_TASK
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        val addPendingIntent = PendingIntent.getActivity(
+            context, 2, addIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        views.setOnClickPendingIntent(R.id.action_add, addPendingIntent)
+
+        // Today Button
+        val todayIntent = Intent(context, MainActivity::class.java).apply {
+            action = ACTION_VIEW_TODAY
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        val todayPendingIntent = PendingIntent.getActivity(
+            context, 3, todayIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        views.setOnClickPendingIntent(R.id.action_today, todayPendingIntent)
+        
+        // Inbox Button
+        val inboxIntent = Intent(context, MainActivity::class.java).apply {
+            action = ACTION_VIEW_INBOX
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        val inboxPendingIntent = PendingIntent.getActivity(
+            context, 4, inboxIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        views.setOnClickPendingIntent(R.id.action_inbox, inboxPendingIntent)
         
         // Load tasks from SharedPreferences
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)

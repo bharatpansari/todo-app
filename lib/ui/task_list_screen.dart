@@ -2,11 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../models/task_model.dart';
 import '../../models/category_model.dart';
+import '../../models/label_model.dart';
 import '../../repositories/task_repository.dart';
 import '../../repositories/category_repository.dart';
+import '../../repositories/label_repository.dart';
 import 'add_edit_task_screen.dart';
 import 'stats_dashboard_screen.dart';
 import 'widgets/task_tile.dart';
+import 'widgets/quick_add_sheet.dart';
+import 'settings_screen.dart';
 import 'tts_settings_screen.dart';
 import 'login_screen.dart';
 import 'package:lucide_icons/lucide_icons.dart';
@@ -14,6 +18,13 @@ import '../../services/native_bridge.dart';
 import '../../services/export_import_service.dart';
 import '../../services/auth_service.dart';
 import '../../repositories/settings_repository.dart';
+import '../../services/voice_service.dart';
+import '../../repositories/template_repository.dart';
+import '../../services/pro_service.dart';
+import 'paywall_screen.dart';
+
+import 'views/board_view.dart';
+import 'views/calendar_view.dart';
 
 class TaskListScreen extends StatefulWidget {
   const TaskListScreen({super.key});
@@ -25,6 +36,10 @@ class TaskListScreen extends StatefulWidget {
 class _TaskListScreenState extends State<TaskListScreen> {
   final TaskRepository _repository = TaskRepository();
   final CategoryRepository _categoryRepository = CategoryRepository();
+  final TemplateRepository _templateRepository = TemplateRepository();
+  final VoiceService _voiceService = VoiceService();
+  final ProService _proService = ProService();
+
   List<Task> _tasks = [];
   List<Category> _categories = [];
   Map<String, Category> _categoryMap = {};
@@ -32,6 +47,9 @@ class _TaskListScreenState extends State<TaskListScreen> {
   String? _selectedFilterCategoryId; // null means "All"
   bool _sortByPriorityFirst = false;
   bool _filterHighPriorityOnly = false;
+  
+  // Navigation state
+  int _currentIndex = 0; // 0=List, 1=Board, 2=Calendar
   
   // Search & Advanced Filters
   final TextEditingController _searchController = TextEditingController();
@@ -42,11 +60,23 @@ class _TaskListScreenState extends State<TaskListScreen> {
   int _filterStatus = 0; // 0=all, 1=pending, 2=completed
   bool? _filterHasSpeakText; // null=all, true=has, false=none
   int _sortMode = 0; // 0=time, 1=priority, 2=title
-
+  
   @override
   void initState() {
     super.initState();
+    _proService.addListener(_onProStatusChanged);
     _loadData();
+  }
+  
+  @override
+  void dispose() {
+    _proService.removeListener(_onProStatusChanged);
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _onProStatusChanged() {
+    if (mounted) setState(() {});
   }
 
   Future<void> _loadData() async {
@@ -663,15 +693,297 @@ class _TaskListScreenState extends State<TaskListScreen> {
     }
   }
 
+  void _showMyAccountSheet() {
+    final user = AuthService().currentUser;
+    final theme = Theme.of(context);
+    
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: theme.scaffoldBackgroundColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Drag handle
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(top: 12, bottom: 20),
+              decoration: BoxDecoration(
+                color: theme.dividerColor,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            
+            // User profile section
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Row(
+                children: [
+                  // Profile photo
+                  CircleAvatar(
+                    radius: 32,
+                    backgroundColor: theme.colorScheme.primaryContainer,
+                    backgroundImage: user?.photoURL != null
+                        ? NetworkImage(user!.photoURL!)
+                        : null,
+                    child: user?.photoURL == null
+                        ? Icon(LucideIcons.user, size: 32, color: theme.colorScheme.primary)
+                        : null,
+                  ),
+                  const SizedBox(width: 16),
+                  
+                  // User details
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          user?.displayName ?? 'User',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          user?.email ?? '',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: theme.hintColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            
+            const SizedBox(height: 24),
+            const Divider(height: 1),
+            
+            // Settings option
+            ListTile(
+              leading: Icon(LucideIcons.settings, color: theme.colorScheme.primary),
+              title: const Text('Settings'),
+              subtitle: const Text('TTS, Export/Import'),
+              trailing: const Icon(LucideIcons.chevronRight, size: 20),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const SettingsScreen()),
+                );
+              },
+            ),
+            
+            // Logout option
+            ListTile(
+              leading: Icon(LucideIcons.logOut, color: theme.colorScheme.error),
+              title: Text('Logout', style: TextStyle(color: theme.colorScheme.error)),
+              subtitle: const Text('Sign out from your account'),
+              onTap: () async {
+                Navigator.pop(context);
+                await AuthService().signOut();
+                if (context.mounted) {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => const LoginScreen()),
+                  );
+                }
+              },
+            ),
+            
+            const SizedBox(height: 24),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _startVoiceEntry() async {
+    if (!_proService.canUseVoice) {
+      if (mounted) {
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const PaywallScreen()));
+      }
+      return;
+    }
+
+    // 1. Check permissions and init
+    final isAvailable = await _voiceService.init();
+    if (!isAvailable) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Microphone permission denied or speech recognition unavailable')),
+        );
+      }
+      return;
+    }
+
+    String heardText = "";
+    
+    // 2. Show Dialog
+    if (!mounted) return;
+    
+    await showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            // Start listening once dialog is built if not already listening
+            if (!_voiceService.isListening && heardText.isEmpty) {
+               _voiceService.startListening(
+                 onResult: (text) {
+                   setState(() => heardText = text);
+                 },
+                 onSoundLevel: (level) {},
+               );
+            }
+            
+            return AlertDialog(
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                   Icon(LucideIcons.mic, size: 48, color: Theme.of(context).primaryColor),
+                   const SizedBox(height: 16),
+                   const Text("Listening...", style: TextStyle(fontWeight: FontWeight.bold)),
+                   const SizedBox(height: 8),
+                   Text(
+                     heardText.isEmpty ? "Say something..." : heardText,
+                     textAlign: TextAlign.center,
+                     style: TextStyle(color: Theme.of(context).primaryColor),
+                   ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    _voiceService.stop();
+                    Navigator.pop(context);
+                  },
+                  child: const Text("Done"),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+    
+    await _voiceService.stop();
+
+    // 3. Navigate to Add Task with text
+    if (heardText.isNotEmpty && mounted) {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => AddEditTaskScreen(initialTitle: heardText),
+        ),
+      );
+      _loadData();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final filteredTasks = _filteredTasks;
-    
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Daily Tasks'),
-        actions: [
-          // Stats dashboard
+        title: Text(_currentIndex == 0 ? 'My Daily Tasks' : (_currentIndex == 1 ? 'Board' : 'Calendar')),
+        actions: _buildAppBarActions(),
+      ),
+      body: _buildBody(),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _currentIndex,
+        onDestinationSelected: (index) {
+          if ((index == 1 || index == 2) && !_proService.isPro) {
+             Navigator.push(context, MaterialPageRoute(builder: (_) => const PaywallScreen()));
+             return;
+          }
+          setState(() => _currentIndex = index);
+        },
+        destinations: const [
+          NavigationDestination(
+             icon: Icon(LucideIcons.list),
+             label: 'List',
+          ),
+          NavigationDestination(
+             icon: Icon(LucideIcons.trello),
+             label: 'Board',
+          ),
+          NavigationDestination(
+             icon: Icon(LucideIcons.calendar),
+             label: 'Calendar',
+          ),
+        ],
+      ),
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          // Voice Button
+          if (_currentIndex == 0) // Only on list view
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: FloatingActionButton.small(
+                heroTag: "voice_fab",
+                onPressed: _startVoiceEntry,
+                backgroundColor: Theme.of(context).colorScheme.tertiaryContainer,
+                foregroundColor: Theme.of(context).colorScheme.onTertiaryContainer,
+                child: const Icon(LucideIcons.mic),
+              ),
+            ),
+            
+          // Add Button
+          FloatingActionButton.extended(
+            heroTag: "add_fab",
+            onPressed: () async {
+              await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const AddEditTaskScreen(),
+                ),
+              );
+              _loadData();
+            },
+            elevation: 6,
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            foregroundColor: Colors.white,
+            icon: const Icon(LucideIcons.plus, size: 22),
+            label: const Text("New Task", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+            extendedPadding: const EdgeInsets.symmetric(horizontal: 24),
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<Widget> _buildAppBarActions() {
+    if (_currentIndex != 0) {
+       return [
+          IconButton(
+            icon: CircleAvatar(
+              radius: 14,
+              backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+              backgroundImage: AuthService().currentUser?.photoURL != null
+                  ? NetworkImage(AuthService().currentUser!.photoURL!)
+                  : null,
+              child: AuthService().currentUser?.photoURL == null
+                  ? Icon(LucideIcons.user, size: 16, color: Theme.of(context).colorScheme.primary)
+                  : null,
+            ),
+            tooltip: 'My Account',
+            onPressed: _showMyAccountSheet,
+          ),
+       ];
+    }
+    
+    return [
           IconButton(
             icon: const Icon(LucideIcons.barChart3),
             tooltip: 'Statistics',
@@ -682,18 +994,16 @@ class _TaskListScreenState extends State<TaskListScreen> {
               );
             },
           ),
-          // Sort toggle
           PopupMenuButton<int>(
             icon: const Icon(LucideIcons.arrowUpDown),
             tooltip: 'Sort by',
             onSelected: (mode) => setState(() => _sortMode = mode),
             itemBuilder: (context) => [
-              PopupMenuItem(value: 0, child: Row(children: [Icon(_sortMode == 0 ? LucideIcons.check : null, size: 16), const SizedBox(width: 8), const Text('Time')])),
-              PopupMenuItem(value: 1, child: Row(children: [Icon(_sortMode == 1 ? LucideIcons.check : null, size: 16), const SizedBox(width: 8), const Text('Priority')])),
-              PopupMenuItem(value: 2, child: Row(children: [Icon(_sortMode == 2 ? LucideIcons.check : null, size: 16), const SizedBox(width: 8), const Text('Title')])),
+              PopupMenuItem(value: 0, child: Row(children: [const Icon(LucideIcons.clock, size: 16), const SizedBox(width: 8), const Text('Time')])),
+              PopupMenuItem(value: 1, child: Row(children: [const Icon(LucideIcons.alertTriangle, size: 16), const SizedBox(width: 8), const Text('Priority')])),
+              PopupMenuItem(value: 2, child: Row(children: [const Icon(LucideIcons.type, size: 16), const SizedBox(width: 8), const Text('Title')])),
             ],
           ),
-          // Filter button
           IconButton(
             icon: Badge(
               isLabelVisible: _hasActiveFilters,
@@ -703,30 +1013,53 @@ class _TaskListScreenState extends State<TaskListScreen> {
             onPressed: _showFilterSheet,
           ),
           IconButton(
-            icon: const Icon(LucideIcons.settings),
-            onPressed: () {
-               _showSettingsDialog();
-            },
+            icon: const Icon(LucideIcons.copy),
+            tooltip: 'Templates',
+            onPressed: _showTemplateSheet,
           ),
-          // Sign out button
           IconButton(
-            icon: const Icon(Icons.logout),
-            tooltip: 'Sign Out',
-            onPressed: () async {
-              await AuthService().signOut();
-              if (context.mounted) {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => const LoginScreen()),
-                );
-              }
-            },
+            icon: CircleAvatar(
+              radius: 14,
+              backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+              backgroundImage: AuthService().currentUser?.photoURL != null
+                  ? NetworkImage(AuthService().currentUser!.photoURL!)
+                  : null,
+              child: AuthService().currentUser?.photoURL == null
+                  ? Icon(LucideIcons.user, size: 16, color: Theme.of(context).colorScheme.primary)
+                  : null,
+            ),
+            tooltip: 'My Account',
+            onPressed: _showMyAccountSheet,
           ),
-        ],
-      ),
-      body: _isLoading 
-          ? const Center(child: CircularProgressIndicator())
-          : Column(
+    ];
+  }
+
+  Widget _buildBody() {
+    if (_isLoading) return const Center(child: CircularProgressIndicator());
+
+    switch (_currentIndex) {
+      case 1:
+        return BoardView(
+           tasks: _tasks, 
+           categories: _categories,
+           onTaskUpdated: (t) => _loadData(),
+        );
+      case 2:
+        return CalendarView(
+           tasks: _tasks,
+           onTaskUpdated: (t) => _loadData(),
+           onTaskDeleted: (t) => _loadData(),
+        );
+      case 0:
+      default:
+        return _buildListView();
+    }
+  }
+
+  Widget _buildListView() {
+    final filteredTasks = _filteredTasks;
+    
+    return Column(
               children: [
                 // Search bar
                 Padding(
@@ -875,7 +1208,8 @@ class _TaskListScreenState extends State<TaskListScreen> {
                         itemCount: filteredTasks.length,
                         itemBuilder: (context, index) {
                           final task = filteredTasks[index];
-                          final category = _getCategoryForTask(task);
+                          // Simple safe lookup using cache map
+                          final category = _categoryMap[task.categoryId];
                           
                           return TaskTile(
                             key: Key(task.id),
@@ -889,27 +1223,222 @@ class _TaskListScreenState extends State<TaskListScreen> {
                       ),
                 ),
               ],
-            ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () async {
-          await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const AddEditTaskScreen(),
-            ),
-          );
-          _loadData();
-        },
-        elevation: 6,
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        foregroundColor: Colors.white,
-        icon: const Icon(LucideIcons.plus, size: 22),
-        label: const Text("New Task", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
-        extendedPadding: const EdgeInsets.symmetric(horizontal: 24),
+            );
+  }
+
+
+  void _showTemplateSheet() async {
+    if (!_proService.canUseTemplates) {
+      if (mounted) {
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const PaywallScreen()));
+      }
+      return;
+    }
+
+    final templates = await _templateRepository.getTemplates();
+    if (!mounted) return;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.5,
+        minChildSize: 0.3,
+        maxChildSize: 0.9,
+        expand: false,
+        builder: (context, scrollController) => StatefulBuilder(
+           builder: (context, setSheetState) {
+             return ListView(
+              controller: scrollController,
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+              children: [
+                Text("Templates", style: Theme.of(context).textTheme.headlineSmall),
+                const SizedBox(height: 16),
+                
+                // Save Button
+                ListTile(
+                  leading: const Icon(LucideIcons.save),
+                  title: const Text("Save Current View as Template"),
+                  subtitle: Text("${_filteredTasks.length} tasks visible"),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _showSaveTemplateDialog();
+                  },
+                  tileColor: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.3),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                const SizedBox(height: 24),
+                
+                const Text("Saved Templates", style: TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                
+                if (templates.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Text(
+                      "No templates saved yet.",
+                      style: TextStyle(color: Theme.of(context).hintColor),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+
+                ...templates.map((t) => Card(
+                  elevation: 0,
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                  margin: const EdgeInsets.only(bottom: 8),
+                  child: ListTile(
+                    title: Text(t.name, style: const TextStyle(fontWeight: FontWeight.w600)),
+                    subtitle: Text("${t.tasks.length} tasks"),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(LucideIcons.playCircle, size: 20),
+                          color: Theme.of(context).colorScheme.primary,
+                          onPressed: () {
+                            Navigator.pop(context);
+                            _showApplyTemplateDialog(t);
+                          },
+                        ),
+                        IconButton(
+                          icon: const Icon(LucideIcons.trash2, size: 18),
+                          onPressed: () async {
+                            await _templateRepository.deleteTemplate(t.id);
+                            final newTemplates = await _templateRepository.getTemplates();
+                            setSheetState(() {
+                               templates.clear();
+                               templates.addAll(newTemplates);
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _showApplyTemplateDialog(t);
+                    },
+                  ),
+                )),
+              ],
+            );
+          }
+        ),
       ),
     );
   }
 
+  void _showSaveTemplateDialog() {
+    final controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Save Template"),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            labelText: "Template Name",
+            hintText: "e.g., Packing List",
+            border: OutlineInputBorder(),
+          ),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+          FilledButton(
+            onPressed: () async {
+              if (controller.text.isNotEmpty) {
+                 await _templateRepository.saveTemplateFromTasks(controller.text, _filteredTasks);
+                 Navigator.pop(context);
+                 if (mounted) {
+                   ScaffoldMessenger.of(context).showSnackBar(
+                     const SnackBar(content: Text("Template saved")),
+                   );
+                 }
+              }
+            }, 
+            child: const Text("Save"),
+          ),
+        ],
+      ),
+    );
+  }
 
+  void _showApplyTemplateDialog(TaskTemplate template) {
+    DateTime startDate = DateTime.now();
+    String? selectedCategoryId = _selectedFilterCategoryId ?? defaultCategoryId;
+    
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) {
+           // ignore: unused_local_variable
+           final categoryName = _categoryMap[selectedCategoryId]?.name ?? "Inbox";
+           return AlertDialog(
+            title: Text("Apply '${template.name}'"),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text("Start Date"),
+                const SizedBox(height: 8),
+                InkWell(
+                  onTap: () async {
+                    final date = await showDatePicker(
+                      context: context,
+                      firstDate: DateTime.now().subtract(const Duration(days: 365)), 
+                      lastDate: DateTime.now().add(const Duration(days: 365 * 5)),
+                      initialDate: startDate,
+                    );
+                    if (date != null) setDialogState(() => startDate = date);
+                  },
+                  child: InputDecorator(
+                    decoration: const InputDecoration(border: OutlineInputBorder()),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(DateFormat.MMMMEEEEd().format(startDate)),
+                        const Icon(LucideIcons.calendar, size: 16),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text("Target Category"),
+                const SizedBox(height: 8),
+                DropdownButtonFormField<String>(
+                  value: selectedCategoryId,
+                  decoration: const InputDecoration(border: OutlineInputBorder()),
+                  items: _categories.map((c) => DropdownMenuItem(
+                    value: c.id,
+                    child: Text(c.name),
+                  )).toList(),
+                  onChanged: (val) => setDialogState(() => selectedCategoryId = val),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+              FilledButton(
+                onPressed: () async {
+                   Navigator.pop(context);
+                   if (selectedCategoryId != null) {
+                     await _templateRepository.applyTemplate(template, startDate, selectedCategoryId!);
+                     _loadData();
+                     if (mounted) {
+                       ScaffoldMessenger.of(context).showSnackBar(
+                         const SnackBar(content: Text("Template applied successfully")),
+                       );
+                     }
+                   }
+                }, 
+                child: const Text("Apply"),
+              ),
+            ],
+          );
+        }
+      ),
+    );
+  }
 }
 

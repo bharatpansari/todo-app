@@ -7,9 +7,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'firebase_options.dart';
 import 'models/task_model.dart';
 import 'models/category_model.dart';
+import 'models/label_model.dart';
 import 'models/sync_operation.dart';
 import 'repositories/category_repository.dart';
 import 'repositories/task_repository.dart';
+import 'repositories/label_repository.dart';
 import 'repositories/settings_repository.dart';
 import 'services/native_bridge.dart';
 import 'services/sync_service.dart';
@@ -24,6 +26,7 @@ late SyncService syncService;
 late SyncQueue syncQueue;
 late TaskRepository taskRepository;
 late CategoryRepository categoryRepository;
+late LabelRepository labelRepository;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -35,6 +38,7 @@ void main() async {
   await Hive.initFlutter();
   Hive.registerAdapter(TaskAdapter());
   Hive.registerAdapter(CategoryAdapter());
+  Hive.registerAdapter(LabelAdapter());
   Hive.registerAdapter(SyncOperationAdapter());
   Hive.registerAdapter(SyncOperationTypeAdapter());
   
@@ -42,6 +46,8 @@ void main() async {
   await SettingsRepository().init();
   categoryRepository = CategoryRepository();
   await categoryRepository.initializeDefaultCategories();
+  labelRepository = LabelRepository();
+  await labelRepository.initializeDefaultLabels();
   
   // Initialize sync services
   syncService = SyncService();

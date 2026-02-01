@@ -116,6 +116,10 @@ class Task extends HiveObject {
   @HiveField(14)
   DateTime updatedAt;
 
+  /// List of label IDs attached to this task
+  @HiveField(15)
+  List<String> labelIds;
+
   Task({
     String? id,
     required this.title,
@@ -131,6 +135,7 @@ class Task extends HiveObject {
     this.isRecurringSeries = false,
     this.priority = TaskPriority.medium,
     this.preReminders = const [],
+    this.labelIds = const [],
     DateTime? updatedAt,
   }) : id = id ?? const Uuid().v4(),
        updatedAt = updatedAt ?? DateTime.now();
@@ -263,6 +268,7 @@ class Task extends HiveObject {
       'isRecurringSeries': isRecurringSeries,
       'priority': priority,
       'preReminders': preReminders,
+      'labelIds': labelIds,
       'updatedAt': updatedAt.toIso8601String(),
     };
   }
@@ -290,6 +296,10 @@ class Task extends HiveObject {
       priority: json['priority'] as int? ?? TaskPriority.medium,
       preReminders: (json['preReminders'] as List<dynamic>?)
               ?.map((e) => e as int)
+              .toList() ??
+          const [],
+      labelIds: (json['labelIds'] as List<dynamic>?)
+              ?.map((e) => e as String)
               .toList() ??
           const [],
       updatedAt: json['updatedAt'] != null

@@ -32,6 +32,50 @@
             android:contentDescription="Refresh" />
     </LinearLayout>
 
+    <!-- Quick Actions -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingBottom="8dp">
+
+        <TextView
+            android:id="@+id/action_add"
+            android:layout_width="0dp"
+            android:layout_height="32dp"
+            android:layout_weight="1"
+            android:layout_marginEnd="4dp"
+            android:background="@drawable/widget_button_bg"
+            android:gravity="center"
+            android:text="+ Add"
+            android:textSize="12sp"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/action_today"
+            android:layout_width="0dp"
+            android:layout_height="32dp"
+            android:layout_weight="1"
+            android:layout_marginEnd="4dp"
+            android:background="@drawable/widget_button_bg"
+            android:gravity="center"
+            android:text="Today"
+            android:textSize="12sp"
+            android:textColor="#FFFFFF" />
+
+        <TextView
+            android:id="@+id/action_inbox"
+            android:layout_width="0dp"
+            android:layout_height="32dp"
+            android:layout_weight="1"
+            android:background="@drawable/widget_button_bg"
+            android:gravity="center"
+            android:text="Inbox"
+            android:textSize="12sp"
+            android:textColor="#FFFFFF" />
+    </LinearLayout>
+
     <!-- Task 1 -->
     <LinearLayout
         android:id="@+id/task_row_1"

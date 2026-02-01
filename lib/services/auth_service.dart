@@ -1,5 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import '../repositories/task_repository.dart';
+import '../repositories/category_repository.dart';
+import '../repositories/label_repository.dart';
 
 /// Service for handling Firebase Authentication with Google Sign-In.
 class AuthService {
@@ -74,8 +78,38 @@ class AuthService {
   }
 
   /// Signs out from both Firebase and Google.
+  /// Also clears all local data to prevent data leakage between users.
   Future<void> signOut() async {
+    // Clear all local Hive data first
+    await clearAllLocalData();
+    
     await _googleSignIn.signOut();
     await _auth.signOut();
+  }
+  
+  /// Clears all local Hive data (tasks, categories, labels, sync queue)
+  /// Called on logout to prevent data leakage between different user accounts
+  Future<void> clearAllLocalData() async {
+    try {
+      // Clear tasks box
+      final tasksBox = await Hive.openBox(TaskRepository.boxName);
+      await tasksBox.clear();
+      
+      // Clear categories box
+      final categoriesBox = await Hive.openBox(CategoryRepository.boxName);
+      await categoriesBox.clear();
+      
+      // Clear labels box
+      final labelsBox = await Hive.openBox(LabelRepository.boxName);
+      await labelsBox.clear();
+      
+      // Clear sync queue box
+      final syncQueueBox = await Hive.openBox('syncQueueBox');
+      await syncQueueBox.clear();
+      
+      print('All local data cleared on logout');
+    } catch (e) {
+      print('Error clearing local data: $e');
+    }
   }
 }

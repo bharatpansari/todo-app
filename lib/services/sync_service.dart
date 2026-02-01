@@ -4,8 +4,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../models/task_model.dart';
 import '../models/category_model.dart';
+import '../models/label_model.dart';
 import '../repositories/task_repository.dart';
 import '../repositories/category_repository.dart';
+import '../repositories/label_repository.dart';
 
 /// Service for syncing data with Firebase Realtime Database
 /// Uses last-write-wins conflict resolution based on updatedAt timestamp
@@ -28,6 +30,10 @@ class SyncService {
   /// Firebase RTDB reference for user's categories
   DatabaseReference get _categoriesRef => 
       FirebaseDatabase.instance.ref('users/$userId/categories');
+  
+  /// Firebase RTDB reference for user's labels
+  DatabaseReference get _labelsRef => 
+      FirebaseDatabase.instance.ref('users/$userId/labels');
   
   // ========== PUSH METHODS ==========
   
@@ -53,6 +59,18 @@ class SyncService {
   Future<void> deleteCategoryRemote(String categoryId) async {
     if (!isLoggedIn) return;
     await _categoriesRef.child(categoryId).remove();
+  }
+  
+  /// Push a label to Firebase RTDB
+  Future<void> pushLabel(Label label) async {
+    if (!isLoggedIn) return;
+    await _labelsRef.child(label.id).set(label.toJson());
+  }
+  
+  /// Delete a label from Firebase RTDB
+  Future<void> deleteLabelRemote(String labelId) async {
+    if (!isLoggedIn) return;
+    await _labelsRef.child(labelId).remove();
   }
   
   // ========== PULL & MERGE ==========

@@ -3,14 +3,19 @@ import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 import '../../models/task_model.dart';
 import '../../models/category_model.dart';
+import '../../models/label_model.dart';
 import '../../repositories/task_repository.dart';
 import '../../repositories/category_repository.dart';
+import '../../repositories/label_repository.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import '../services/pro_service.dart';
+import 'paywall_screen.dart';
 
 class AddEditTaskScreen extends StatefulWidget {
   final Task? task;
+  final String? initialTitle;
 
-  const AddEditTaskScreen({super.key, this.task});
+  const AddEditTaskScreen({super.key, this.task, this.initialTitle});
 
   @override
   State<AddEditTaskScreen> createState() => _AddEditTaskScreenState();
@@ -18,6 +23,7 @@ class AddEditTaskScreen extends StatefulWidget {
 
 class _AddEditTaskScreenState extends State<AddEditTaskScreen> {
   final _formKey = GlobalKey<FormState>();
+  final ProService _proService = ProService();
   late TextEditingController _titleController;
   late TextEditingController _descriptionController;
   late TextEditingController _speakController;
@@ -25,8 +31,11 @@ class _AddEditTaskScreenState extends State<AddEditTaskScreen> {
   late TimeOfDay _selectedTime;
   
   final CategoryRepository _categoryRepository = CategoryRepository();
+  final LabelRepository _labelRepository = LabelRepository();
   List<Category> _categories = [];
+  List<Label> _labels = [];
   String _selectedCategoryId = defaultCategoryId;
+  List<String> _selectedLabelIds = [];
   bool _isLoadingCategories = true;
   
   // Repeat pattern state
@@ -41,7 +50,7 @@ class _AddEditTaskScreenState extends State<AddEditTaskScreen> {
   @override
   void initState() {
     super.initState();
-    _titleController = TextEditingController(text: widget.task?.title ?? '');
+    _titleController = TextEditingController(text: widget.task?.title ?? widget.initialTitle ?? '');
     _descriptionController = TextEditingController(text: widget.task?.description ?? '');
     _speakController = TextEditingController(text: widget.task?.speakText ?? '');
     
@@ -54,14 +63,17 @@ class _AddEditTaskScreenState extends State<AddEditTaskScreen> {
     _customWeekdays = List.from(widget.task?.customWeekdays ?? []);
     _preReminders = List.from(widget.task?.preReminders ?? []);
     _selectedPriority = widget.task?.priority ?? TaskPriority.medium;
+    _selectedLabelIds = List.from(widget.task?.labelIds ?? []);
     
-    _loadCategories();
+    _loadData();
   }
   
-  Future<void> _loadCategories() async {
+  Future<void> _loadData() async {
     final categories = await _categoryRepository.getAllCategories();
+    final labels = await _labelRepository.getAllLabels();
     setState(() {
       _categories = categories;
+      _labels = labels;
       _isLoadingCategories = false;
     });
   }
@@ -133,6 +145,7 @@ class _AddEditTaskScreenState extends State<AddEditTaskScreen> {
          parentTaskId: isEdit ? widget.task!.parentTaskId : null,
          priority: _selectedPriority,
          preReminders: _preReminders,
+         labelIds: _selectedLabelIds,
      );
 
      final repo = TaskRepository();
@@ -146,6 +159,11 @@ class _AddEditTaskScreenState extends State<AddEditTaskScreen> {
   }
   
   void _showAddCategoryDialog() {
+    if (!_proService.canAddMoreCategories(_categories.length)) {
+       Navigator.push(context, MaterialPageRoute(builder: (_) => const PaywallScreen()));
+       return;
+    }
+
     final nameController = TextEditingController();
     int selectedColorValue = Colors.teal.value;
     
@@ -238,7 +256,7 @@ class _AddEditTaskScreenState extends State<AddEditTaskScreen> {
                 );
                 
                 await _categoryRepository.addCategory(newCategory);
-                await _loadCategories();
+                await _loadData();
                 
                 if (mounted) {
                   setState(() {
@@ -502,9 +520,28 @@ class _AddEditTaskScreenState extends State<AddEditTaskScreen> {
               Wrap(
                 spacing: 8,
                 children: [
-                   _preReminderChip(15, "15m before"),
-                   _preReminderChip(30, "30m before"),
-                   _preReminderChip(60, "1h before"),
+                   _preReminderChip(10, "10m"), // Changed to 10m as per user? No user said 15m, 30m, 60m in previous context but "Allow multiple... e.g. 10m" in plan.
+                   // Let's stick to standard:
+                   _preReminderChip(15, "15m"),
+                   _preReminderChip(30, "30m"),
+                   _preReminderChip(60, "1h"),
+                   _preReminderChip(1440, "1d"),
+                   
+                   // Custom reminders not in standard set
+                   ..._preReminders.where((m) => ![10, 15, 30, 60, 1440].contains(m)).map((m) => InputChip(
+                      label: Text(_formatDuration(m)),
+                      selected: true,
+                      onDeleted: () => setState(() => _preReminders.remove(m)),
+                      onSelected: (_) {}, // No-op, just for visual consistency or deletion
+                      selectedColor: Theme.of(context).primaryColor.withValues(alpha: 0.2),
+                      checkmarkColor: Theme.of(context).primaryColor,
+                   )),
+                   
+                   ActionChip(
+                     label: const Text("Custom"),
+                     avatar: const Icon(LucideIcons.plus, size: 14),
+                     onPressed: _showCustomReminderDialog,
+                   ),
                 ],
               ),
               
@@ -686,16 +723,106 @@ class _AddEditTaskScreenState extends State<AddEditTaskScreen> {
       label: Text(label),
       selected: isSelected,
       onSelected: (selected) {
-        setState(() {
-          if (selected) {
-            _preReminders.add(minutes);
-          } else {
-            _preReminders.remove(minutes);
+        if (selected) {
+          if (!_proService.canAddMultipleReminders && _preReminders.isNotEmpty) {
+             Navigator.push(context, MaterialPageRoute(builder: (_) => const PaywallScreen()));
+             return;
           }
-        });
+          setState(() {
+            _preReminders.add(minutes);
+          });
+        } else {
+          setState(() {
+            _preReminders.remove(minutes);
+          });
+        }
       },
       selectedColor: Theme.of(context).primaryColor.withValues(alpha: 0.2),
       checkmarkColor: Theme.of(context).primaryColor, 
+    );
+  }
+
+  String _formatDuration(int minutes) {
+    if (minutes >= 1440) return '${minutes ~/ 1440}d';
+    if (minutes >= 60) return '${minutes ~/ 60}h';
+    return '${minutes}m';
+  }
+
+  void _showCustomReminderDialog() {
+    if (!_proService.canAddMultipleReminders && _preReminders.isNotEmpty) {
+       Navigator.push(context, MaterialPageRoute(builder: (_) => const PaywallScreen()));
+       return;
+    }
+
+    int selectedValue = 10;
+    String selectedUnit = 'minutes'; // minutes, hours, days
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Custom Reminder"),
+        content: StatefulBuilder(
+          builder: (context, setState) {
+            return Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SizedBox(
+                  width: 80,
+                  child: TextFormField(
+                    initialValue: selectedValue.toString(),
+                    keyboardType: TextInputType.number,
+                    textAlign: TextAlign.center,
+                    decoration: const InputDecoration(
+                      contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+                      border: OutlineInputBorder(),
+                    ),
+                    onChanged: (val) {
+                      if (val.isNotEmpty) {
+                        selectedValue = int.tryParse(val) ?? 0;
+                      }
+                    },
+                  ),
+                ),
+                const SizedBox(width: 16),
+                DropdownButton<String>(
+                  value: selectedUnit,
+                  items: const [
+                    DropdownMenuItem(value: 'minutes', child: Text("Minutes")),
+                    DropdownMenuItem(value: 'hours', child: Text("Hours")),
+                    DropdownMenuItem(value: 'days', child: Text("Days")),
+                  ],
+                  onChanged: (val) {
+                    if (val != null) setState(() => selectedUnit = val);
+                  },
+                ),
+              ],
+            );
+          },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancel"),
+          ),
+          FilledButton(
+            onPressed: () {
+              int minutes = selectedValue;
+              if (selectedUnit == 'hours') minutes *= 60;
+              if (selectedUnit == 'days') minutes *= 1440;
+              
+              if (minutes > 0) {
+                this.setState(() {
+                  if (!_preReminders.contains(minutes)) {
+                    _preReminders.add(minutes);
+                  }
+                });
+              }
+              Navigator.pop(context);
+            },
+            child: const Text("Add"),
+          ),
+        ],
+      ),
     );
   }
 }

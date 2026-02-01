@@ -67,6 +67,10 @@ class SyncOperationTypeAdapter extends TypeAdapter<SyncOperationType> {
         return SyncOperationType.upsertCategory;
       case 3:
         return SyncOperationType.deleteCategory;
+      case 4:
+        return SyncOperationType.upsertLabel;
+      case 5:
+        return SyncOperationType.deleteLabel;
       default:
         return SyncOperationType.upsertTask;
     }
@@ -86,6 +90,12 @@ class SyncOperationTypeAdapter extends TypeAdapter<SyncOperationType> {
         break;
       case SyncOperationType.deleteCategory:
         writer.writeByte(3);
+        break;
+      case SyncOperationType.upsertLabel:
+        writer.writeByte(4);
+        break;
+      case SyncOperationType.deleteLabel:
+        writer.writeByte(5);
         break;
     }
   }

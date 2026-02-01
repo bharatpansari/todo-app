@@ -5,6 +5,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import '../models/sync_operation.dart';
 import '../models/task_model.dart';
 import '../models/category_model.dart';
+import '../models/label_model.dart';
 import 'sync_service.dart';
 
 /// Manages a queue of pending sync operations with retry logic
@@ -74,6 +75,23 @@ class SyncQueue {
     await _enqueue(SyncOperation(
       type: SyncOperationType.deleteCategory,
       entityId: categoryId,
+    ));
+  }
+  
+  /// Enqueue a label upsert operation
+  Future<void> enqueueLabelUpsert(Label label) async {
+    await _enqueue(SyncOperation(
+      type: SyncOperationType.upsertLabel,
+      entityId: label.id,
+      jsonPayload: jsonEncode(label.toJson()),
+    ));
+  }
+  
+  /// Enqueue a label delete operation
+  Future<void> enqueueLabelDelete(String labelId) async {
+    await _enqueue(SyncOperation(
+      type: SyncOperationType.deleteLabel,
+      entityId: labelId,
     ));
   }
   
@@ -156,6 +174,17 @@ class SyncQueue {
         
       case SyncOperationType.deleteCategory:
         await _syncService!.deleteCategoryRemote(operation.entityId);
+        break;
+        
+      case SyncOperationType.upsertLabel:
+        if (operation.jsonPayload != null) {
+          final label = Label.fromJson(jsonDecode(operation.jsonPayload!));
+          await _syncService!.pushLabel(label);
+        }
+        break;
+        
+      case SyncOperationType.deleteLabel:
+        await _syncService!.deleteLabelRemote(operation.entityId);
         break;
     }
   }

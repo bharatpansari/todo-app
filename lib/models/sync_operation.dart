@@ -16,6 +16,12 @@ enum SyncOperationType {
   
   @HiveField(3)
   deleteCategory,
+  
+  @HiveField(4)
+  upsertLabel,
+  
+  @HiveField(5)
+  deleteLabel,
 }
 
 /// Represents a pending sync operation to be sent to Firebase RTDB
