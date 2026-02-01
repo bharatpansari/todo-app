@@ -95,13 +95,6 @@ class _TaskListScreenState extends State<TaskListScreen> {
     }
   }
   
-  void _toggleSortMode() {
-    setState(() {
-      _sortByPriorityFirst = !_sortByPriorityFirst;
-      _sortTasks(_tasks);
-    });
-  }
-  
   List<Task> get _filteredTasks {
     var tasks = _tasks.toList();
     
@@ -289,7 +282,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
                     return FilterChip(
                       label: Text(TaskPriority.getLabel(p)),
                       selected: selected,
-                      selectedColor: TaskPriority.getColor(p).withOpacity(0.2),
+                      selectedColor: TaskPriority.getColor(p).withValues(alpha: 0.2),
                       onSelected: (sel) {
                         setState(() {
                           if (sel) {
@@ -476,7 +469,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
       onTap: () => repo.setThemeMode(mode),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        color: isSelected ? Theme.of(context).primaryColor.withOpacity(0.1) : null,
+        color: isSelected ? Theme.of(context).primaryColor.withValues(alpha: 0.1) : null,
         child: Row(
           children: [
             Icon(icon, size: 18, color: isSelected ? Theme.of(context).primaryColor : Theme.of(context).iconTheme.color),
@@ -634,9 +627,9 @@ class _TaskListScreenState extends State<TaskListScreen> {
       if (mounted) Navigator.pop(context); // Close loading
       
       _showSnackBar(
-        "Imported ${result.imported} tasks" +
-        (result.skipped > 0 ? ", skipped ${result.skipped} duplicates" : "") +
-        (result.errors > 0 ? ", ${result.errors} errors" : ""),
+        "Imported ${result.imported} tasks"
+        "${result.skipped > 0 ? ", skipped ${result.skipped} duplicates" : ""}"
+        "${result.errors > 0 ? ", ${result.errors} errors" : ""}",
       );
       
       _loadData(); // Refresh task list
@@ -737,12 +730,13 @@ class _TaskListScreenState extends State<TaskListScreen> {
               children: [
                 // Search bar
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
                   child: TextField(
                     controller: _searchController,
                     decoration: InputDecoration(
                       hintText: 'Search tasks...',
-                      prefixIcon: const Icon(LucideIcons.search, size: 20),
+                      hintStyle: TextStyle(color: Theme.of(context).hintColor.withValues(alpha: 0.6)),
+                      prefixIcon: Icon(LucideIcons.search, size: 20, color: Theme.of(context).hintColor),
                       suffixIcon: _searchQuery.isNotEmpty
                           ? IconButton(
                               icon: const Icon(LucideIcons.x, size: 18),
@@ -752,10 +746,6 @@ class _TaskListScreenState extends State<TaskListScreen> {
                               },
                             )
                           : null,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      filled: true,
-                      fillColor: Theme.of(context).cardColor,
                     ),
                     onChanged: (value) => setState(() => _searchQuery = value),
                   ),
@@ -780,7 +770,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
                                 _filterHighPriorityOnly = false;
                               });
                             },
-                            selectedColor: Theme.of(context).primaryColor.withOpacity(0.2),
+                            selectedColor: Theme.of(context).primaryColor.withValues(alpha: 0.2),
                             checkmarkColor: Theme.of(context).primaryColor,
                           ),
                         ),
@@ -805,7 +795,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
                                 }
                               });
                             },
-                            selectedColor: TaskPriority.getColor(TaskPriority.high).withOpacity(0.2),
+                            selectedColor: TaskPriority.getColor(TaskPriority.high).withValues(alpha: 0.2),
                             checkmarkColor: TaskPriority.getColor(TaskPriority.high),
                           ),
                         ),
@@ -827,7 +817,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
                               setState(() => _selectedFilterCategoryId = 
                                   _selectedFilterCategoryId == category.id ? null : category.id);
                             },
-                            selectedColor: category.color.withOpacity(0.2),
+                            selectedColor: category.color.withValues(alpha: 0.2),
                             checkmarkColor: category.color,
                           ),
                         )),
@@ -838,19 +828,46 @@ class _TaskListScreenState extends State<TaskListScreen> {
                 // Task list
                 Expanded(
                   child: filteredTasks.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(LucideIcons.clipboardList, size: 64, color: Colors.grey[300]),
-                            const SizedBox(height: 16),
-                            Text(
-                              _selectedFilterCategoryId != null 
-                                  ? "No tasks in this category!"
-                                  : "No tasks yet!", 
-                              style: TextStyle(color: Colors.grey[500], fontSize: 18)
-                            ),
-                          ],
+                    ? AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 300),
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                width: 100,
+                                height: 100,
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  LucideIcons.clipboardList, 
+                                  size: 48, 
+                                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+                              Text(
+                                _selectedFilterCategoryId != null 
+                                    ? "No tasks in this category"
+                                    : "No tasks yet", 
+                                style: TextStyle(
+                                  color: Theme.of(context).textTheme.bodyLarge?.color?.withValues(alpha: 0.6), 
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                "Tap + to add your first task",
+                                style: TextStyle(
+                                  color: Theme.of(context).hintColor,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       )
                     : ListView.builder(
@@ -883,9 +900,12 @@ class _TaskListScreenState extends State<TaskListScreen> {
           );
           _loadData();
         },
-        backgroundColor: Colors.black,
-        icon: const Icon(LucideIcons.plus, color: Colors.white),
-        label: const Text("New Task", style: TextStyle(color: Colors.white)),
+        elevation: 6,
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Colors.white,
+        icon: const Icon(LucideIcons.plus, size: 22),
+        label: const Text("New Task", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+        extendedPadding: const EdgeInsets.symmetric(horizontal: 24),
       ),
     );
   }

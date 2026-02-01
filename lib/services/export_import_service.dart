@@ -122,10 +122,12 @@ class ExportImportService {
   Future<void> shareExport({required String format}) async {
     final file = await exportToFile(format: format);
     
-    await Share.shareXFiles(
-      [XFile(file.path)],
-      subject: 'Talkative Todo Export',
-      text: 'My tasks export from Talkative Todo',
+    await SharePlus.instance.share(
+      ShareParams(
+        files: [XFile(file.path)],
+        subject: 'Talkative Todo Export',
+        text: 'My tasks export from Talkative Todo',
+      ),
     );
   }
 

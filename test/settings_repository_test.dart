@@ -41,9 +41,10 @@ void main() {
     
     test('Should emit changes', () async {
         final repo = SettingsRepository();
-        bool notified = false;
+        // ignore: unused_local_variable
+        bool _notified = false;
         repo.themeModeListenable.addListener(() {
-            notified = true;
+            _notified = true;
         });
         
         await repo.setThemeMode(ThemeMode.dark);

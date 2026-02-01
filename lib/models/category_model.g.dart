@@ -20,19 +20,22 @@ class CategoryAdapter extends TypeAdapter<Category> {
       id: fields[0] as String,
       name: fields[1] as String,
       colorValue: fields[2] as int,
+      updatedAt: fields[3] as DateTime?,
     );
   }
 
   @override
   void write(BinaryWriter writer, Category obj) {
     writer
-      ..writeByte(3)
+      ..writeByte(4)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
       ..write(obj.name)
       ..writeByte(2)
-      ..write(obj.colorValue);
+      ..write(obj.colorValue)
+      ..writeByte(3)
+      ..write(obj.updatedAt);
   }
 
   @override

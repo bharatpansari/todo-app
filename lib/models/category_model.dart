@@ -46,15 +46,42 @@ class Category extends HiveObject {
   @HiveField(2)
   int colorValue;
 
+  /// Last update timestamp for sync conflict resolution (last-write-wins)
+  @HiveField(3)
+  DateTime updatedAt;
+
   Category({
     required this.id,
     required this.name,
     required this.colorValue,
-  });
+    DateTime? updatedAt,
+  }) : updatedAt = updatedAt ?? DateTime.now();
 
   /// Get the Color object from the stored int value
   Color get color => Color(colorValue);
 
   /// Check if this is a default (non-deletable) category
   bool get isDefault => defaultCategories.any((c) => c.id == id);
+
+  /// Convert category to JSON for sync/export
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'colorValue': colorValue,
+      'updatedAt': updatedAt.toIso8601String(),
+    };
+  }
+
+  /// Create category from JSON for sync/import
+  factory Category.fromJson(Map<String, dynamic> json) {
+    return Category(
+      id: json['id'] as String,
+      name: json['name'] as String? ?? 'Unnamed',
+      colorValue: json['colorValue'] as int? ?? 0xFF9E9E9E,
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.parse(json['updatedAt'] as String)
+          : null,
+    );
+  }
 }

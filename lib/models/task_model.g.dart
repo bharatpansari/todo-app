@@ -31,13 +31,14 @@ class TaskAdapter extends TypeAdapter<Task> {
       isRecurringSeries: fields[11] as bool,
       priority: fields[12] as int,
       preReminders: (fields[13] as List).cast<int>(),
+      updatedAt: fields[14] as DateTime?,
     );
   }
 
   @override
   void write(BinaryWriter writer, Task obj) {
     writer
-      ..writeByte(14)
+      ..writeByte(15)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -65,7 +66,9 @@ class TaskAdapter extends TypeAdapter<Task> {
       ..writeByte(12)
       ..write(obj.priority)
       ..writeByte(13)
-      ..write(obj.preReminders);
+      ..write(obj.preReminders)
+      ..writeByte(14)
+      ..write(obj.updatedAt);
   }
 
   @override

@@ -1,8 +1,15 @@
 import 'package:hive_flutter/hive_flutter.dart';
 import '../models/category_model.dart';
+import '../services/sync_queue.dart';
 
 class CategoryRepository {
   static const String boxName = 'categoriesBox';
+  SyncQueue? _syncQueue;
+  
+  /// Set the sync queue for cloud sync operations
+  void setSyncQueue(SyncQueue syncQueue) {
+    _syncQueue = syncQueue;
+  }
 
   Future<Box<Category>> get _box async => await Hive.openBox<Category>(boxName);
 
@@ -31,12 +38,20 @@ class CategoryRepository {
   /// Add a new category
   Future<void> addCategory(Category category) async {
     final box = await _box;
+    category.updatedAt = DateTime.now();
     await box.put(category.id, category);
+    
+    // Enqueue for cloud sync
+    _syncQueue?.enqueueCategoryUpsert(category);
   }
 
   /// Update an existing category
   Future<void> updateCategory(Category category) async {
+    category.updatedAt = DateTime.now();
     await category.save();
+    
+    // Enqueue for cloud sync
+    _syncQueue?.enqueueCategoryUpsert(category);
   }
 
   /// Delete a category (only custom categories can be deleted)
@@ -50,6 +65,10 @@ class CategoryRepository {
     }
     
     await box.delete(id);
+    
+    // Enqueue for cloud sync
+    _syncQueue?.enqueueCategoryDelete(id);
+    
     return true;
   }
 

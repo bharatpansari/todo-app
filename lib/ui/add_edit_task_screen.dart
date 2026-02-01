@@ -272,37 +272,60 @@ class _AddEditTaskScreenState extends State<AddEditTaskScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              TextFormField(
-                controller: _titleController,
-                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                decoration: const InputDecoration(
-                  hintText: 'What needs to be done?',
-                  border: InputBorder.none,
-                  hintStyle: TextStyle(color: Colors.grey),
+              // Title Input
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).cardColor,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
-                validator: (val) => val == null || val.isEmpty ? 'Please enter a title' : null,
+                child: TextFormField(
+                  controller: _titleController,
+                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600, letterSpacing: -0.3),
+                  decoration: InputDecoration(
+                    hintText: 'What needs to be done?',
+                    border: InputBorder.none,
+                    hintStyle: TextStyle(color: Theme.of(context).hintColor.withValues(alpha: 0.5)),
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                  validator: (val) => val == null || val.isEmpty ? 'Please enter a title' : null,
+                ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
               
-              TextField(
-                controller: _descriptionController,
-                style: TextStyle(fontSize: 16, color: Theme.of(context).textTheme.bodyMedium?.color),
-                maxLines: 3,
-                minLines: 1,
-                keyboardType: TextInputType.multiline,
-                decoration: const InputDecoration(
-                  hintText: 'Add details, notes, or subtasks...',
-                  border: InputBorder.none,
-                  hintStyle: TextStyle(color: Colors.grey),
-                  contentPadding: EdgeInsets.zero,
-                  prefixIcon: Icon(LucideIcons.alignLeft, size: 18, color: Colors.grey),
-                  prefixIconConstraints: BoxConstraints(minWidth: 28),
+              // Description Input
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).cardColor,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: TextField(
+                  controller: _descriptionController,
+                  style: TextStyle(fontSize: 15, color: Theme.of(context).textTheme.bodyMedium?.color),
+                  maxLines: 3,
+                  minLines: 1,
+                  keyboardType: TextInputType.multiline,
+                  decoration: InputDecoration(
+                    hintText: 'Add details or notes...',
+                    border: InputBorder.none,
+                    hintStyle: TextStyle(color: Theme.of(context).hintColor.withValues(alpha: 0.5)),
+                    contentPadding: EdgeInsets.zero,
+                    icon: Icon(LucideIcons.alignLeft, size: 18, color: Theme.of(context).hintColor),
+                  ),
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 28),
               
               // Category Selector
-              const Text("Category", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              _buildSectionLabel(context, "Category", LucideIcons.tag),
               const SizedBox(height: 12),
               _isLoadingCategories
                   ? const Center(child: CircularProgressIndicator())
@@ -366,10 +389,10 @@ class _AddEditTaskScreenState extends State<AddEditTaskScreen> {
                       ),
                     ),
               
-              const SizedBox(height: 24),
+              const SizedBox(height: 28),
               
               // Priority Selector
-              const Text("Priority", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              _buildSectionLabel(context, "Priority", LucideIcons.flag),
               const SizedBox(height: 12),
               Container(
                 padding: const EdgeInsets.all(8),
@@ -389,7 +412,7 @@ class _AddEditTaskScreenState extends State<AddEditTaskScreen> {
                           margin: const EdgeInsets.symmetric(horizontal: 4),
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           decoration: BoxDecoration(
-                            color: isSelected ? color.withOpacity(0.15) : Colors.transparent,
+                            color: isSelected ? color.withValues(alpha: 0.15) : Colors.transparent,
                             borderRadius: BorderRadius.circular(8),
                             border: isSelected ? Border.all(color: color, width: 2) : null,
                           ),
@@ -511,14 +534,14 @@ class _AddEditTaskScreenState extends State<AddEditTaskScreen> {
                               _repeatType = RepeatType.daily;
                             }
                           }),
-                          activeColor: Theme.of(context).primaryColor,
+                          activeTrackColor: Theme.of(context).primaryColor,
                         ),
                       ],
                     ),
                     if (_isRepeatEnabled) ...[
                       const SizedBox(height: 16),
                       DropdownButtonFormField<String>(
-                        value: _repeatType == RepeatType.none ? RepeatType.daily : _repeatType,
+                        initialValue: _repeatType == RepeatType.none ? RepeatType.daily : _repeatType,
                         decoration: InputDecoration(
                           contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
@@ -588,25 +611,53 @@ class _AddEditTaskScreenState extends State<AddEditTaskScreen> {
                   ],
               ),
 
-              const SizedBox(height: 48),
+              const SizedBox(height: 40),
               SizedBox(
                   width: double.infinity,
-                  height: 56,
-                  child: ElevatedButton(
+                  height: 58,
+                  child: FilledButton(
                       onPressed: _saveTask,
-                      style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.black,
+                      style: FilledButton.styleFrom(
+                          backgroundColor: Theme.of(context).colorScheme.primary,
                           foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                          elevation: 0,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
                       ),
-                      child: const Text("Schedule Task", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(LucideIcons.check, size: 20),
+                          const SizedBox(width: 10),
+                          Text(
+                            widget.task == null ? "Create Task" : "Save Changes",
+                            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
                   ),
               ),
+              const SizedBox(height: 24),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildSectionLabel(BuildContext context, String text, IconData icon) {
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: Theme.of(context).colorScheme.primary),
+        const SizedBox(width: 8),
+        Text(
+          text, 
+          style: TextStyle(
+            fontWeight: FontWeight.w600, 
+            fontSize: 15,
+            color: Theme.of(context).textTheme.bodyLarge?.color,
+            letterSpacing: -0.2,
+          ),
+        ),
+      ],
     );
   }
 
@@ -624,7 +675,7 @@ class _AddEditTaskScreenState extends State<AddEditTaskScreen> {
           }
         });
       },
-      selectedColor: Theme.of(context).primaryColor.withOpacity(0.2),
+      selectedColor: Theme.of(context).primaryColor.withValues(alpha: 0.2),
       checkmarkColor: Theme.of(context).primaryColor,
     );
   }
@@ -643,7 +694,7 @@ class _AddEditTaskScreenState extends State<AddEditTaskScreen> {
           }
         });
       },
-      selectedColor: Theme.of(context).primaryColor.withOpacity(0.2),
+      selectedColor: Theme.of(context).primaryColor.withValues(alpha: 0.2),
       checkmarkColor: Theme.of(context).primaryColor, 
     );
   }

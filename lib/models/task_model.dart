@@ -112,6 +112,10 @@ class Task extends HiveObject {
   @HiveField(13)
   List<int> preReminders;
 
+  /// Last update timestamp for sync conflict resolution (last-write-wins)
+  @HiveField(14)
+  DateTime updatedAt;
+
   Task({
     String? id,
     required this.title,
@@ -127,7 +131,9 @@ class Task extends HiveObject {
     this.isRecurringSeries = false,
     this.priority = TaskPriority.medium,
     this.preReminders = const [],
-  }) : id = id ?? const Uuid().v4();
+    DateTime? updatedAt,
+  }) : id = id ?? const Uuid().v4(),
+       updatedAt = updatedAt ?? DateTime.now();
 
   /// Check if this task is recurring
   bool get isRecurring => repeatType != RepeatType.none && isRepeatEnabled;
@@ -215,6 +221,7 @@ class Task extends HiveObject {
       isRecurringSeries: isRecurringSeries,
       priority: priority,
       preReminders: List.from(preReminders),
+      // updatedAt defaults to DateTime.now() for new occurrence
     );
   }
 
@@ -234,7 +241,8 @@ class Task extends HiveObject {
       parentTaskId: id, // Link to parent
       isRecurringSeries: false,
       priority: priority,
-      preReminders: const [], // Detached occurrence doesn't necessarily need pre-reminders, or copy them? Let's keep checking. Copying for safety.
+      preReminders: const [],
+      // updatedAt defaults to DateTime.now() for detached occurrence
     );
   }
 
@@ -255,6 +263,7 @@ class Task extends HiveObject {
       'isRecurringSeries': isRecurringSeries,
       'priority': priority,
       'preReminders': preReminders,
+      'updatedAt': updatedAt.toIso8601String(),
     };
   }
 
@@ -283,6 +292,9 @@ class Task extends HiveObject {
               ?.map((e) => e as int)
               .toList() ??
           const [],
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.parse(json['updatedAt'] as String)
+          : null,
     );
   }
 }

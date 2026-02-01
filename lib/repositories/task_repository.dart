@@ -1,10 +1,17 @@
 import 'package:hive_flutter/hive_flutter.dart';
 import '../models/task_model.dart';
 import '../services/native_bridge.dart';
+import '../services/sync_queue.dart';
 
 class TaskRepository {
   static const String boxName = 'tasksBox';
   final NativeBridge _nativeBridge = NativeBridge();
+  SyncQueue? _syncQueue;
+  
+  /// Set the sync queue for cloud sync operations
+  void setSyncQueue(SyncQueue syncQueue) {
+    _syncQueue = syncQueue;
+  }
 
   Future<Box<Task>> get _box async => await Hive.openBox<Task>(boxName);
 
@@ -16,11 +23,16 @@ class TaskRepository {
 
   Future<void> addTask(Task task) async {
     final box = await _box;
+    // Ensure updatedAt is current
+    task.updatedAt = DateTime.now();
     await box.add(task);
     await task.save();
     
     await _nativeBridge.scheduleTask(task);
-    await _refreshWidget(); // Update widget
+    await _refreshWidget();
+    
+    // Enqueue for cloud sync
+    _syncQueue?.enqueueTaskUpsert(task);
   }
 
   Future<void> updateTask(Task task) async {
@@ -41,9 +53,11 @@ class TaskRepository {
       existingTask.repeatType = task.repeatType;
       existingTask.customWeekdays = task.customWeekdays;
       existingTask.priority = task.priority;
-      // Do not overwrite parentTaskId or isRecurringSeries unless intended, but usually safe to copy for edits
       existingTask.parentTaskId = task.parentTaskId;
       existingTask.isRecurringSeries = task.isRecurringSeries;
+      existingTask.preReminders = task.preReminders;
+      // Update timestamp for sync conflict resolution
+      existingTask.updatedAt = DateTime.now();
       
       await existingTask.save();
       
@@ -54,16 +68,23 @@ class TaskRepository {
         await _nativeBridge.cancelTask(existingTask);
       }
       
-      await _refreshWidget(); // Update widget
+      await _refreshWidget();
+      
+      // Enqueue for cloud sync
+      _syncQueue?.enqueueTaskUpsert(existingTask);
     } catch (e) {
       print("Error updating task: Task with id ${task.id} not found in box. Error: $e");
     }
   }
 
   Future<void> deleteTask(Task task) async {
+    final taskId = task.id;
     await _nativeBridge.cancelTask(task);
     await task.delete();
-    await _refreshWidget(); // Update widget
+    await _refreshWidget();
+    
+    // Enqueue for cloud sync
+    _syncQueue?.enqueueTaskDelete(taskId);
   }
 
   Future<List<Task>> getAllTasks() async {

@@ -8,6 +8,12 @@ class AuthService {
 
   /// Returns the currently signed-in user, or null if not signed in.
   User? get currentUser => _auth.currentUser;
+  
+  /// Check if user is currently logged in
+  bool get isLoggedIn => currentUser != null;
+  
+  /// Stream of auth state changes for reactive UI
+  Stream<User?> get authStateChanges => _auth.authStateChanges();
 
   /// Signs in with Google OAuth flow.
   /// Returns the [User] on success, or null if cancelled/failed.

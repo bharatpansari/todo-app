@@ -174,7 +174,7 @@ class _TtsSettingsScreenState extends State<TtsSettingsScreen> {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: Theme.of(context).primaryColor.withOpacity(0.1),
+                  color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(LucideIcons.volume2, color: Theme.of(context).primaryColor),
@@ -306,9 +306,11 @@ class _TtsSettingsScreenState extends State<TtsSettingsScreen> {
                 await _saveSpeechRate(0.75);
                 await _savePitch(1.0);
                 await _saveVolume(1.0);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("TTS settings reset to defaults")),
-                );
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("TTS settings reset to defaults")),
+                  );
+                }
               },
               child: const Text("Reset to Defaults"),
             ),
