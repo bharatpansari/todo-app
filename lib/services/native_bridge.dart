@@ -17,7 +17,7 @@ class NativeBridge {
   static const MethodChannel _channel = MethodChannel('com.example.talkative_todo/alarm');
   static AlarmFiredCallback? _alarmFiredCallback;
   static TaskSnoozedCallback? _taskSnoozedCallback;
-  static TaskMarkedDoneCallback? _taskMarkedDoneCallback;
+
   static bool _isListenerSetup = false;
   
   final SettingsRepository _settings = SettingsRepository();

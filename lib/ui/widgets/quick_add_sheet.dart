@@ -4,9 +4,7 @@ import 'package:uuid/uuid.dart';
 import '../../models/task_model.dart';
 import '../../models/category_model.dart';
 import '../../models/label_model.dart';
-import '../../repositories/task_repository.dart';
-import '../../repositories/category_repository.dart';
-import '../../repositories/label_repository.dart';
+
 import '../../main.dart';
 
 /// A compact bottom sheet for quickly adding tasks
@@ -302,7 +300,7 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
   }
 
   Widget _buildPriorityChip() {
-    final theme = Theme.of(context);
+
     final color = TaskPriority.getColor(_selectedPriority);
     
     return PopupMenuButton<int>(
@@ -339,7 +337,7 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
   }
 
   Widget _buildProjectChip() {
-    final theme = Theme.of(context);
+
     final selectedProject = _projects.firstWhere(
       (p) => p.id == _selectedProjectId,
       orElse: () => _projects.first,

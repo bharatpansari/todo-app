@@ -3,10 +3,10 @@ import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 import '../../models/task_model.dart';
 import '../../models/category_model.dart';
-import '../../models/label_model.dart';
+
 import '../../repositories/task_repository.dart';
 import '../../repositories/category_repository.dart';
-import '../../repositories/label_repository.dart';
+
 import 'package:lucide_icons/lucide_icons.dart';
 import '../services/pro_service.dart';
 import 'paywall_screen.dart';
@@ -31,9 +31,9 @@ class _AddEditTaskScreenState extends State<AddEditTaskScreen> {
   late TimeOfDay _selectedTime;
   
   final CategoryRepository _categoryRepository = CategoryRepository();
-  final LabelRepository _labelRepository = LabelRepository();
+
   List<Category> _categories = [];
-  List<Label> _labels = [];
+
   String _selectedCategoryId = defaultCategoryId;
   List<String> _selectedLabelIds = [];
   bool _isLoadingCategories = true;
@@ -70,10 +70,10 @@ class _AddEditTaskScreenState extends State<AddEditTaskScreen> {
   
   Future<void> _loadData() async {
     final categories = await _categoryRepository.getAllCategories();
-    final labels = await _labelRepository.getAllLabels();
+
     setState(() {
       _categories = categories;
-      _labels = labels;
+
       _isLoadingCategories = false;
     });
   }

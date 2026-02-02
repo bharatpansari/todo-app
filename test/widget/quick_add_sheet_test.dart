@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:talkative_todo/ui/widgets/quick_add_sheet.dart';
-import 'package:talkative_todo/repositories/task_repository.dart';
+
 
 void main() {
   testWidgets('QuickAddSheet UI Test', (WidgetTester tester) async {
@@ -9,7 +9,7 @@ void main() {
       MaterialApp(
         home: Scaffold(
           body: QuickAddSheet(
-            onTaskAdded: (title) {}, // Mock callback
+            onTaskAdded: () {}, // Mock callback
           ),
         ),
       ),

@@ -2,22 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../models/task_model.dart';
 import '../../models/category_model.dart';
-import '../../models/label_model.dart';
+
 import '../../repositories/task_repository.dart';
 import '../../repositories/category_repository.dart';
-import '../../repositories/label_repository.dart';
+
 import 'add_edit_task_screen.dart';
 import 'stats_dashboard_screen.dart';
 import 'widgets/task_tile.dart';
-import 'widgets/quick_add_sheet.dart';
+
 import 'settings_screen.dart';
-import 'tts_settings_screen.dart';
+
 import 'login_screen.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-import '../../services/native_bridge.dart';
-import '../../services/export_import_service.dart';
+
+
 import '../../services/auth_service.dart';
-import '../../repositories/settings_repository.dart';
+
 import '../../services/voice_service.dart';
 import '../../repositories/template_repository.dart';
 import '../../services/pro_service.dart';
@@ -370,328 +370,15 @@ class _TaskListScreenState extends State<TaskListScreen> {
     );
   }
   
-  Category? _getCategoryForTask(Task task) {
-    return _categoryMap[task.categoryId];
-  }
 
-  void _showSettingsDialog() {
-    showDialog(
-      context: context,
-      builder: (context) {
-        final settingsRepo = SettingsRepository();
-        return AlertDialog(
-          insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-          scrollable: true,
-          title: const Text("Settings"),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text("Theme", style: TextStyle(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
-              
-              ValueListenableBuilder(
-                valueListenable: settingsRepo.themeModeListenable,
-                builder: (context, box, _) {
-                  final current = settingsRepo.getThemeMode();
-                  return Container(
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Theme.of(context).dividerColor),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Column(
-                      children: [
-                        _themeOption(context, settingsRepo, current, ThemeMode.system, "System Default", LucideIcons.smartphone),
-                        const Divider(height: 1),
-                        _themeOption(context, settingsRepo, current, ThemeMode.light, "Light Mode", LucideIcons.sun),
-                        const Divider(height: 1),
-                        _themeOption(context, settingsRepo, current, ThemeMode.dark, "Dark Mode", LucideIcons.moon),
-                      ],
-                    ),
-                  );
-                }
-              ),
-              
-              const SizedBox(height: 24),
-              const Text("Permissions", style: TextStyle(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
-              
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: const Text("Allow Exact Alarms"),
-                subtitle: const Text("Required for precise timing", style: TextStyle(fontSize: 12)),
-                trailing: const Icon(LucideIcons.arrowRight, size: 16),
-                onTap: () {
-                  NativeBridge().requestExactAlarmPermission();
-                },
-              ),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: const Text("Ignore Battery Optimizations"),
-                subtitle: const Text("Prevents delayed alarms", style: TextStyle(fontSize: 12)),
-                trailing: const Icon(LucideIcons.arrowRight, size: 16),
-                onTap: () {
-                  NativeBridge().requestBatteryOptimizationIgnore();
-                },
-              ),
-              
-              const SizedBox(height: 24),
-              const Text("Voice", style: TextStyle(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
-              
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: Icon(LucideIcons.volume2, color: Theme.of(context).primaryColor),
-                title: const Text("TTS Settings"),
-                subtitle: const Text("Language, speed, pitch", style: TextStyle(fontSize: 12)),
-                trailing: const Icon(LucideIcons.arrowRight, size: 16),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const TtsSettingsScreen()),
-                  );
-                },
-              ),
-              
-              const SizedBox(height: 24),
-              const Text("Data", style: TextStyle(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
-              
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: Icon(LucideIcons.upload, color: Theme.of(context).primaryColor),
-                title: const Text("Export Tasks"),
-                subtitle: const Text("Save to JSON or CSV", style: TextStyle(fontSize: 12)),
-                trailing: const Icon(LucideIcons.arrowRight, size: 16),
-                onTap: () {
-                  Navigator.pop(context);
-                  _showExportDialog();
-                },
-              ),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: Icon(LucideIcons.download, color: Theme.of(context).primaryColor),
-                title: const Text("Import Tasks"),
-                subtitle: const Text("Restore from JSON file", style: TextStyle(fontSize: 12)),
-                trailing: const Icon(LucideIcons.arrowRight, size: 16),
-                onTap: () {
-                  Navigator.pop(context);
-                  _showImportDialog();
-                },
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("Close"),
-            )
-          ],
-        );
-      }
-    );
-  }
 
-  Widget _themeOption(BuildContext context, SettingsRepository repo, ThemeMode current, ThemeMode mode, String label, IconData icon) {
-    final isSelected = current == mode;
-    return InkWell(
-      onTap: () => repo.setThemeMode(mode),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        color: isSelected ? Theme.of(context).primaryColor.withValues(alpha: 0.1) : null,
-        child: Row(
-          children: [
-            Icon(icon, size: 18, color: isSelected ? Theme.of(context).primaryColor : Theme.of(context).iconTheme.color),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                label,
-                style: TextStyle(
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                  color: isSelected ? Theme.of(context).primaryColor : Theme.of(context).textTheme.bodyMedium?.color,
-                ),
-              ),
-            ),
-            if (isSelected)
-              Icon(LucideIcons.check, size: 18, color: Theme.of(context).primaryColor),
-          ],
-        ),
-      ),
-    );
-  }
 
-  void _showExportDialog() {
-    final exportService = ExportImportService();
-    
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Export Tasks"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(LucideIcons.fileJson),
-              title: const Text("Export as JSON"),
-              subtitle: const Text("Full data, can be re-imported"),
-              onTap: () async {
-                Navigator.pop(context);
-                _showLoadingDialog("Exporting...");
-                try {
-                  await exportService.shareExport(format: 'json');
-                } finally {
-                  if (mounted) Navigator.pop(context);
-                }
-              },
-            ),
-            ListTile(
-              leading: const Icon(LucideIcons.fileSpreadsheet),
-              title: const Text("Export as CSV"),
-              subtitle: const Text("For spreadsheets"),
-              onTap: () async {
-                Navigator.pop(context);
-                _showLoadingDialog("Exporting...");
-                try {
-                  await exportService.shareExport(format: 'csv');
-                } finally {
-                  if (mounted) Navigator.pop(context);
-                }
-              },
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
-          ),
-        ],
-      ),
-    );
-  }
 
-  void _showImportDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Import Tasks"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text("Choose how to handle imported tasks:"),
-            const SizedBox(height: 16),
-            ListTile(
-              leading: const Icon(LucideIcons.merge),
-              title: const Text("Merge"),
-              subtitle: const Text("Keep existing, add new tasks"),
-              onTap: () {
-                Navigator.pop(context);
-                _performImport(merge: true);
-              },
-            ),
-            ListTile(
-              leading: const Icon(LucideIcons.replace),
-              title: const Text("Replace All"),
-              subtitle: const Text("Delete existing, import fresh"),
-              onTap: () {
-                Navigator.pop(context);
-                _confirmReplaceImport();
-              },
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
-          ),
-        ],
-      ),
-    );
-  }
 
-  void _confirmReplaceImport() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("⚠️ Replace All Tasks?"),
-        content: const Text(
-          "This will DELETE all existing tasks and replace them with the imported data. This cannot be undone.",
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () {
-              Navigator.pop(context);
-              _performImport(merge: false);
-            },
-            child: const Text("Replace All"),
-          ),
-        ],
-      ),
-    );
-  }
 
-  Future<void> _performImport({required bool merge}) async {
-    final exportService = ExportImportService();
-    
-    _showLoadingDialog("Selecting file...");
-    
-    try {
-      final jsonContent = await exportService.pickImportFile();
-      if (mounted) Navigator.pop(context); // Close loading
-      
-      if (jsonContent == null) {
-        _showSnackBar("Import cancelled");
-        return;
-      }
-      
-      _showLoadingDialog("Importing...");
-      final result = await exportService.importFromJson(jsonContent, merge: merge);
-      if (mounted) Navigator.pop(context); // Close loading
-      
-      _showSnackBar(
-        "Imported ${result.imported} tasks"
-        "${result.skipped > 0 ? ", skipped ${result.skipped} duplicates" : ""}"
-        "${result.errors > 0 ? ", ${result.errors} errors" : ""}",
-      );
-      
-      _loadData(); // Refresh task list
-    } catch (e) {
-      if (mounted) Navigator.pop(context);
-      _showSnackBar("Import failed: $e");
-    }
-  }
 
-  void _showLoadingDialog(String message) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        content: Row(
-          children: [
-            const CircularProgressIndicator(),
-            const SizedBox(width: 20),
-            Text(message),
-          ],
-        ),
-      ),
-    );
-  }
 
-  void _showSnackBar(String message) {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
-      );
-    }
-  }
+
 
   void _showMyAccountSheet() {
     final user = AuthService().currentUser;
