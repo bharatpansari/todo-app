@@ -284,7 +284,7 @@ class _AddEditTaskScreenState extends State<AddEditTaskScreen> {
         ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(20),
         child: Form(
           key: _formKey,
           child: Column(
@@ -292,10 +292,10 @@ class _AddEditTaskScreenState extends State<AddEditTaskScreen> {
             children: [
               // Title Input
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
                   color: Theme.of(context).cardColor,
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withValues(alpha: 0.05),
@@ -306,7 +306,7 @@ class _AddEditTaskScreenState extends State<AddEditTaskScreen> {
                 ),
                 child: TextFormField(
                   controller: _titleController,
-                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600, letterSpacing: -0.3),
+                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600, letterSpacing: -0.3),
                   decoration: InputDecoration(
                     hintText: 'What needs to be done?',
                     border: InputBorder.none,
@@ -316,7 +316,7 @@ class _AddEditTaskScreenState extends State<AddEditTaskScreen> {
                   validator: (val) => val == null || val.isEmpty ? 'Please enter a title' : null,
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
               
               // Description Input
               Container(
@@ -340,11 +340,11 @@ class _AddEditTaskScreenState extends State<AddEditTaskScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 28),
+              const SizedBox(height: 20),
               
               // Category Selector
               _buildSectionLabel(context, "Category", LucideIcons.tag),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               _isLoadingCategories
                   ? const Center(child: CircularProgressIndicator())
                   : Container(
@@ -407,11 +407,11 @@ class _AddEditTaskScreenState extends State<AddEditTaskScreen> {
                       ),
                     ),
               
-              const SizedBox(height: 28),
+              const SizedBox(height: 20),
               
               // Priority Selector
               _buildSectionLabel(context, "Priority", LucideIcons.flag),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
@@ -459,7 +459,7 @@ class _AddEditTaskScreenState extends State<AddEditTaskScreen> {
                 ),
               ),
               
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
               
               // Date & Time
               Row(
@@ -512,11 +512,11 @@ class _AddEditTaskScreenState extends State<AddEditTaskScreen> {
                 ],
               ),
               
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
 
               // Pre-Reminders
-              const Text("Early Reminders", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-              const SizedBox(height: 12),
+              _buildSectionLabel(context, "Early Reminders", LucideIcons.bellRing),
+              const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
                 children: [
@@ -545,7 +545,7 @@ class _AddEditTaskScreenState extends State<AddEditTaskScreen> {
                 ],
               ),
               
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
               
               // Repeat Toggle
               Container(
@@ -618,11 +618,11 @@ class _AddEditTaskScreenState extends State<AddEditTaskScreen> {
                 ),
               ),
               
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
               
               // Speak Text
-              const Text("Spoken Reminder (TTS)", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-              const SizedBox(height: 12),
+              _buildSectionLabel(context, "Spoken Reminder (TTS)", LucideIcons.volume2),
+              const SizedBox(height: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
@@ -648,16 +648,16 @@ class _AddEditTaskScreenState extends State<AddEditTaskScreen> {
                   ],
               ),
 
-              const SizedBox(height: 40),
+              const SizedBox(height: 32),
               SizedBox(
                   width: double.infinity,
-                  height: 58,
+                  height: 52,
                   child: FilledButton(
                       onPressed: _saveTask,
                       style: FilledButton.styleFrom(
                           backgroundColor: Theme.of(context).colorScheme.primary,
                           foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -666,13 +666,13 @@ class _AddEditTaskScreenState extends State<AddEditTaskScreen> {
                           const SizedBox(width: 10),
                           Text(
                             widget.task == null ? "Create Task" : "Save Changes",
-                            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                           ),
                         ],
                       ),
                   ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
             ],
           ),
         ),
@@ -681,20 +681,23 @@ class _AddEditTaskScreenState extends State<AddEditTaskScreen> {
   }
 
   Widget _buildSectionLabel(BuildContext context, String text, IconData icon) {
-    return Row(
-      children: [
-        Icon(icon, size: 18, color: Theme.of(context).colorScheme.primary),
-        const SizedBox(width: 8),
-        Text(
-          text, 
-          style: TextStyle(
-            fontWeight: FontWeight.w600, 
-            fontSize: 15,
-            color: Theme.of(context).textTheme.bodyLarge?.color,
-            letterSpacing: -0.2,
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: Row(
+        children: [
+          Icon(icon, size: 16, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)),
+          const SizedBox(width: 8),
+          Text(
+            text, 
+            style: TextStyle(
+              fontWeight: FontWeight.w600, 
+              fontSize: 14,
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+              letterSpacing: -0.2,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 

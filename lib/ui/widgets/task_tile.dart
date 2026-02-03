@@ -100,7 +100,7 @@ class _TaskTileState extends State<TaskTile> with SingleTickerProviderStateMixin
               Colors.red.shade400.withValues(alpha: 0.5),
             ],
           ),
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(16),
         ),
         child: const Icon(LucideIcons.trash2, color: Colors.red, size: 28),
       ),
@@ -114,12 +114,12 @@ class _TaskTileState extends State<TaskTile> with SingleTickerProviderStateMixin
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 250),
             curve: Curves.easeOutCubic,
-            margin: const EdgeInsets.only(bottom: 12),
+            margin: const EdgeInsets.only(bottom: 10),
             decoration: BoxDecoration(
               color: task.isCompleted
                   ? (isDark ? const Color(0xFF252538) : const Color(0xFFF5F5F8))
                   : theme.cardColor,
-              borderRadius: BorderRadius.circular(24),
+              borderRadius: BorderRadius.circular(16),
               border: isPast
                   ? Border.all(color: Colors.orange.withValues(alpha: 0.4), width: 1.5)
                   : null,
@@ -139,20 +139,20 @@ class _TaskTileState extends State<TaskTile> with SingleTickerProviderStateMixin
                 InkWell(
                   onTap: _toggleExpanded,
                   borderRadius: BorderRadius.vertical(
-                    top: const Radius.circular(24),
-                    bottom: Radius.circular(_isExpanded ? 0 : 24),
+                    top: const Radius.circular(16),
+                    bottom: Radius.circular(_isExpanded ? 0 : 16),
                   ),
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         // Larger Checkbox Tap Target
                         SizedBox(
-                          width: 48,
-                          height: 48,
+                          width: 44,
+                          height: 44,
                           child: Transform.scale(
-                            scale: 1.2,
+                            scale: 1.1,
                             child: Checkbox(
                               value: task.isCompleted,
                               shape: RoundedRectangleBorder(
@@ -165,7 +165,7 @@ class _TaskTileState extends State<TaskTile> with SingleTickerProviderStateMixin
                             ),
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: 10),
 
                         // Main Content
                         Expanded(
@@ -181,8 +181,8 @@ class _TaskTileState extends State<TaskTile> with SingleTickerProviderStateMixin
                                     child: Text(
                                       task.title,
                                       style: TextStyle(
-                                        fontSize: 17,
-                                        fontWeight: FontWeight.w600,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w500,
                                         decoration: task.isCompleted ? TextDecoration.lineThrough : null,
                                         color: task.isCompleted
                                             ? theme.disabledColor
@@ -197,7 +197,7 @@ class _TaskTileState extends State<TaskTile> with SingleTickerProviderStateMixin
                                   ],
                                 ],
                               ),
-                              const SizedBox(height: 6),
+                              const SizedBox(height: 4),
 
                               // Description Snippet
                               if (!_isExpanded && task.description.isNotEmpty)
@@ -208,8 +208,8 @@ class _TaskTileState extends State<TaskTile> with SingleTickerProviderStateMixin
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
-                                      color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
-                                      fontSize: 14,
+                                      color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.6),
+                                      fontSize: 13,
                                     ),
                                   ),
                                 ),
@@ -262,7 +262,7 @@ class _TaskTileState extends State<TaskTile> with SingleTickerProviderStateMixin
                               // Speak Text Preview
                               if (task.speakText.isNotEmpty && !_isExpanded)
                                 Padding(
-                                  padding: const EdgeInsets.only(top: 6),
+                                  padding: const EdgeInsets.only(top: 4),
                                   child: Row(
                                     children: [
                                       Icon(LucideIcons.volume2, size: 13, color: theme.disabledColor),

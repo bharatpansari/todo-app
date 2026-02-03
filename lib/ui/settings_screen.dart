@@ -219,11 +219,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ),
 
-              _buildSectionHeader('Appearance'),
+              _buildSectionHeader('APPEARANCE'),
               ListTile(
-                leading: const Icon(LucideIcons.palette),
+                dense: true,
+                visualDensity: VisualDensity.compact,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                leading: const Icon(LucideIcons.palette, size: 22),
                 title: const Text('Theme'),
-                subtitle: Text(_getThemeLabel(_themeMode)),
+                subtitle: Text(_getThemeLabel(_themeMode), style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6))),
                 trailing: PopupMenuButton<ThemeMode>(
                   initialValue: _themeMode,
                   onSelected: _updateTheme,
@@ -244,12 +247,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ),
               const Divider(),
-              _buildSectionHeader('Voice & Sound'),
+              _buildSectionHeader('VOICE & SOUND'),
               ListTile(
-                leading: const Icon(LucideIcons.volume2),
+                dense: true,
+                visualDensity: VisualDensity.compact,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                leading: const Icon(LucideIcons.volume2, size: 22),
                 title: const Text('Text-to-Speech Settings'),
-                subtitle: const Text('Voice, speed, pitch, volume'),
-                trailing: const Icon(LucideIcons.chevronRight),
+                subtitle: Text('Voice, speed, pitch, volume', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6))),
+                trailing: const Icon(LucideIcons.chevronRight, size: 20),
                 onTap: () {
                   Navigator.push(
                     context,
@@ -259,28 +265,37 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
 
               const Divider(),
-              _buildSectionHeader('Data Management'),
+              _buildSectionHeader('DATA MANAGEMENT'),
               
               ListTile(
-                leading: const Icon(LucideIcons.download),
+                dense: true,
+                visualDensity: VisualDensity.compact,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                leading: const Icon(LucideIcons.download, size: 22),
                 title: const Text('Export Tasks'),
-                subtitle: const Text('Backup to file or share'),
+                subtitle: Text('Backup to file or share', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6))),
                 onTap: _exportTasks,
               ),
               
               ListTile(
-                leading: const Icon(LucideIcons.upload),
+                dense: true,
+                visualDensity: VisualDensity.compact,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                leading: const Icon(LucideIcons.upload, size: 22),
                 title: const Text('Import Tasks'),
-                subtitle: const Text('Restore from backup'),
+                subtitle: Text('Restore from backup', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6))),
                 onTap: _importTasks,
               ),
 
               const Divider(),
-              _buildSectionHeader('About'),
+              _buildSectionHeader('ABOUT'),
               ListTile(
-                leading: const Icon(LucideIcons.info),
+                dense: true,
+                visualDensity: VisualDensity.compact,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                leading: const Icon(LucideIcons.info, size: 22),
                 title: const Text('DeepMind Antigravity'),
-                subtitle: const Text('Version 1.0.0'),
+                subtitle: Text('Version 1.0.0', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6))),
               ),
             ],
           ),
@@ -300,13 +315,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _buildSectionHeader(String title) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 6),
       child: Text(
         title,
         style: TextStyle(
-          fontSize: 14,
+          fontSize: 13,
           fontWeight: FontWeight.w600,
           color: Theme.of(context).colorScheme.primary,
+          letterSpacing: 0.5,
         ),
       ),
     );

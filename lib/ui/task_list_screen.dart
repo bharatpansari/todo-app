@@ -582,6 +582,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(_currentIndex == 0 ? 'My Daily Tasks' : (_currentIndex == 1 ? 'Board' : 'Calendar')),
+        titleSpacing: 16,
         actions: _buildAppBarActions(),
       ),
       body: _buildBody(),
@@ -672,7 +673,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
     
     return [
           IconButton(
-            icon: const Icon(LucideIcons.barChart3),
+            icon: const Icon(LucideIcons.barChart3, size: 22),
             tooltip: 'Statistics',
             onPressed: () {
               Navigator.push(
@@ -681,8 +682,9 @@ class _TaskListScreenState extends State<TaskListScreen> {
               );
             },
           ),
+          const SizedBox(width: 4),
           PopupMenuButton<int>(
-            icon: const Icon(LucideIcons.arrowUpDown),
+            icon: const Icon(LucideIcons.arrowUpDown, size: 22),
             tooltip: 'Sort by',
             onSelected: (mode) => setState(() => _sortMode = mode),
             itemBuilder: (context) => [
@@ -691,19 +693,22 @@ class _TaskListScreenState extends State<TaskListScreen> {
               PopupMenuItem(value: 2, child: Row(children: [const Icon(LucideIcons.type, size: 16), const SizedBox(width: 8), const Text('Title')])),
             ],
           ),
+          const SizedBox(width: 4),
           IconButton(
             icon: Badge(
               isLabelVisible: _hasActiveFilters,
-              child: const Icon(LucideIcons.filter),
+              child: const Icon(LucideIcons.filter, size: 22),
             ),
             tooltip: 'Filters',
             onPressed: _showFilterSheet,
           ),
+          const SizedBox(width: 4),
           IconButton(
-            icon: const Icon(LucideIcons.copy),
+            icon: const Icon(LucideIcons.copy, size: 22),
             tooltip: 'Templates',
             onPressed: _showTemplateSheet,
           ),
+          const SizedBox(width: 4),
           IconButton(
             icon: CircleAvatar(
               radius: 14,
@@ -750,39 +755,45 @@ class _TaskListScreenState extends State<TaskListScreen> {
               children: [
                 // Search bar
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
-                  child: TextField(
-                    controller: _searchController,
-                    decoration: InputDecoration(
-                      hintText: 'Search tasks...',
-                      hintStyle: TextStyle(color: Theme.of(context).hintColor.withValues(alpha: 0.6)),
-                      prefixIcon: Icon(LucideIcons.search, size: 20, color: Theme.of(context).hintColor),
-                      suffixIcon: _searchQuery.isNotEmpty
-                          ? IconButton(
-                              icon: const Icon(LucideIcons.x, size: 18),
-                              onPressed: () {
-                                _searchController.clear();
-                                setState(() => _searchQuery = '');
-                              },
-                            )
-                          : null,
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 6),
+                  child: SizedBox(
+                    height: 48,
+                    child: TextField(
+                      controller: _searchController,
+                      decoration: InputDecoration(
+                        hintText: 'Search tasks...',
+                        hintStyle: TextStyle(color: Theme.of(context).hintColor.withValues(alpha: 0.6)),
+                        prefixIcon: Icon(LucideIcons.search, size: 20, color: Theme.of(context).hintColor),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                        suffixIcon: _searchQuery.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(LucideIcons.x, size: 18),
+                                onPressed: () {
+                                  _searchController.clear();
+                                  setState(() => _searchQuery = '');
+                                },
+                              )
+                            : null,
+                      ),
+                      onChanged: (value) => setState(() => _searchQuery = value),
                     ),
-                    onChanged: (value) => setState(() => _searchQuery = value),
                   ),
                 ),
                 // Category filter chips
                 if (_categories.isNotEmpty)
                   Container(
-                    height: 50,
+                    height: 44,
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: ListView(
                       scrollDirection: Axis.horizontal,
                       children: [
                         // "All" chip
                         Padding(
-                          padding: const EdgeInsets.only(right: 8),
+                          padding: const EdgeInsets.only(right: 6),
                           child: FilterChip(
-                            label: const Text('All'),
+                            label: const Text('All', style: TextStyle(fontSize: 13)),
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             selected: _selectedFilterCategoryId == null && !_filterHighPriorityOnly,
                             onSelected: (_) {
                               setState(() {
@@ -796,7 +807,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
                         ),
                         // High Priority filter chip
                         Padding(
-                          padding: const EdgeInsets.only(right: 8),
+                          padding: const EdgeInsets.only(right: 6),
                           child: FilterChip(
                             avatar: Icon(
                               LucideIcons.alertTriangle,
@@ -805,7 +816,9 @@ class _TaskListScreenState extends State<TaskListScreen> {
                                   ? TaskPriority.getColor(TaskPriority.high)
                                   : Colors.grey,
                             ),
-                            label: const Text('High Priority'),
+                            label: const Text('High Priority', style: TextStyle(fontSize: 13)),
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             selected: _filterHighPriorityOnly,
                             onSelected: (_) {
                               setState(() {
@@ -821,17 +834,19 @@ class _TaskListScreenState extends State<TaskListScreen> {
                         ),
                         // Category chips
                         ..._categories.map((category) => Padding(
-                          padding: const EdgeInsets.only(right: 8),
+                          padding: const EdgeInsets.only(right: 6),
                           child: FilterChip(
                             avatar: Container(
-                              width: 12,
-                              height: 12,
+                              width: 10,
+                              height: 10,
                               decoration: BoxDecoration(
                                 color: category.color,
                                 shape: BoxShape.circle,
                               ),
                             ),
-                            label: Text(category.name),
+                            label: Text(category.name, style: const TextStyle(fontSize: 13)),
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             selected: _selectedFilterCategoryId == category.id,
                             onSelected: (_) {
                               setState(() => _selectedFilterCategoryId = 

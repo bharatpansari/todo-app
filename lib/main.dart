@@ -118,7 +118,11 @@ class MyApp extends StatelessWidget {
     return ValueListenableBuilder(
       valueListenable: settingsRepo.themeModeListenable,
       builder: (context, box, child) {
-        return MaterialApp(
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+            textScaler: TextScaler.linear(MediaQuery.of(context).textScaleFactor.clamp(0.9, 1.2)),
+          ),
+          child: MaterialApp(
           title: 'Talkative Todo',
           debugShowCheckedModeBanner: false,
           themeMode: settingsRepo.getThemeMode(),
@@ -139,29 +143,29 @@ class MyApp extends StatelessWidget {
               centerTitle: false,
               titleTextStyle: TextStyle(
                 color: Colors.black87, 
-                fontSize: 28, 
-                fontWeight: FontWeight.bold,
+                fontSize: 22, 
+                fontWeight: FontWeight.w600,
                 fontFamily: 'Outfit',
-                letterSpacing: -0.5,
+                letterSpacing: -0.3,
               ),
               iconTheme: IconThemeData(color: Colors.black87, size: 24),
             ),
             cardTheme: CardThemeData(
               elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               clipBehavior: Clip.antiAlias,
               color: Colors.white,
             ),
             filledButtonTheme: FilledButtonThemeData(
               style: FilledButton.styleFrom(
-                minimumSize: const Size(48, 56),
+                minimumSize: const Size(48, 48),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
               ),
             ),
             elevatedButtonTheme: ElevatedButtonThemeData(
               style: ElevatedButton.styleFrom(
-                minimumSize: const Size(48, 56),
+                minimumSize: const Size(48, 48),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 elevation: 0,
               ),
@@ -176,18 +180,18 @@ class MyApp extends StatelessWidget {
               filled: true,
               fillColor: const Color(0xFFF0F1F5),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide.none,
               ),
               enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide.none,
               ),
               focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(12),
                 borderSide: const BorderSide(color: Color(0xFF6C63FF), width: 2),
               ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             ),
             chipTheme: ChipThemeData(
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -197,7 +201,7 @@ class MyApp extends StatelessWidget {
               elevation: 4,
               highlightElevation: 8,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.all(Radius.circular(20)),
+                borderRadius: BorderRadius.all(Radius.circular(16)),
               ),
             ),
           ),
@@ -221,29 +225,29 @@ class MyApp extends StatelessWidget {
               centerTitle: false,
               titleTextStyle: TextStyle(
                 color: Colors.white, 
-                fontSize: 28, 
-                fontWeight: FontWeight.bold,
+                fontSize: 22, 
+                fontWeight: FontWeight.w600,
                 fontFamily: 'Outfit',
-                letterSpacing: -0.5,
+                letterSpacing: -0.3,
               ),
               iconTheme: IconThemeData(color: Colors.white, size: 24),
             ),
             cardTheme: CardThemeData(
               elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               clipBehavior: Clip.antiAlias,
               color: const Color(0xFF1E1E2E),
             ),
             filledButtonTheme: FilledButtonThemeData(
               style: FilledButton.styleFrom(
-                minimumSize: const Size(48, 56),
+                minimumSize: const Size(48, 48),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
               ),
             ),
             elevatedButtonTheme: ElevatedButtonThemeData(
               style: ElevatedButton.styleFrom(
-                minimumSize: const Size(48, 56),
+                minimumSize: const Size(48, 48),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 elevation: 0,
               ),
@@ -258,18 +262,18 @@ class MyApp extends StatelessWidget {
               filled: true,
               fillColor: const Color(0xFF2A2A3E),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide.none,
               ),
               enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide.none,
               ),
               focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(12),
                 borderSide: const BorderSide(color: Color(0xFF8B83FF), width: 2),
               ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             ),
             chipTheme: ChipThemeData(
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -279,14 +283,15 @@ class MyApp extends StatelessWidget {
               elevation: 4,
               highlightElevation: 8,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.all(Radius.circular(20)),
+                borderRadius: BorderRadius.all(Radius.circular(16)),
               ),
             ),
           ),
           home: FirebaseAuth.instance.currentUser == null 
               ? const LoginScreen() 
               : const TaskListScreen(),
-        );
+        ),
+      );
       }
     );
   }

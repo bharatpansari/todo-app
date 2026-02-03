@@ -38,28 +38,28 @@ class _PaywallScreenState extends State<PaywallScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                   const SizedBox(height: 48),
+                   const SizedBox(height: 40),
                    Icon(
                      LucideIcons.crown,
-                     size: 64,
+                     size: 56,
                      color: Colors.amber.shade700,
                    ),
-                   const SizedBox(height: 24),
+                   const SizedBox(height: 20),
                    Text(
                      "Upgrade to Pro",
                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                        fontWeight: FontWeight.bold,
                      ),
                    ),
-                   const SizedBox(height: 12),
+                   const SizedBox(height: 8),
                    Text(
                      "Unlock the full power of Talkative Todo",
                      textAlign: TextAlign.center,
-                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                        color: Theme.of(context).hintColor,
                      ),
                    ),
-                   const SizedBox(height: 48),
+                   const SizedBox(height: 32),
                    
                    // Features List
                    _buildFeatureRow(context, "Unlimited Projects", "5 Projects"),
@@ -71,22 +71,55 @@ class _PaywallScreenState extends State<PaywallScreen> {
 
                    const Spacer(),
                    
+                   // Price Card
+                   Container(
+                     width: double.infinity,
+                     padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                     margin: const EdgeInsets.only(bottom: 16),
+                     decoration: BoxDecoration(
+                       color: Colors.amber.shade50,
+                       borderRadius: BorderRadius.circular(16),
+                       border: Border.all(color: Colors.amber.shade200),
+                     ),
+                     child: Column(
+                       children: [
+                         Text(
+                           "\$9.99",
+                           style: TextStyle(
+                             fontSize: 28,
+                             fontWeight: FontWeight.bold,
+                             color: Colors.amber.shade800,
+                           ),
+                         ),
+                         const SizedBox(height: 4),
+                         Text(
+                           "Lifetime Access • One-time Payment",
+                           style: TextStyle(
+                             fontSize: 13,
+                             color: Colors.amber.shade700,
+                           ),
+                         ),
+                       ],
+                     ),
+                   ),
+                   
                    // Upgrade Button
                    SizedBox(
                      width: double.infinity,
+                     height: 52,
                      child: FilledButton.icon(
                        onPressed: _isLoading ? null : _handlePurchase,
                        style: FilledButton.styleFrom(
-                         padding: const EdgeInsets.all(16),
                          backgroundColor: Colors.amber.shade700,
                          foregroundColor: Colors.white,
+                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                        ),
                        icon: _isLoading 
                            ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                           : const Icon(LucideIcons.sparkles),
+                           : const Icon(LucideIcons.sparkles, size: 20),
                        label: Text(
-                         _isLoading ? "Processing..." : "Upgrade for \$9.99 / Lifetime",
-                         style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                         _isLoading ? "Processing..." : "Upgrade to Pro",
+                         style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                        ),
                      ),
                    ),
@@ -108,7 +141,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
 
   Widget _buildFeatureRow(BuildContext context, String proFeature, String freeFeature) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16.0),
+      padding: const EdgeInsets.only(bottom: 10.0),
       child: Row(
         children: [
           Container(
@@ -117,13 +150,13 @@ class _PaywallScreenState extends State<PaywallScreen> {
               color: Colors.green.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: const Icon(LucideIcons.check, size: 16, color: Colors.green),
+            child: const Icon(LucideIcons.check, size: 14, color: Colors.green),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 10),
           Expanded(
             child: Text(
               proFeature, 
-              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+              style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 15),
             ),
           ),
           Text(
@@ -131,7 +164,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
             style: TextStyle(
               color: Theme.of(context).disabledColor,
               decoration: TextDecoration.lineThrough,
-              fontSize: 14,
+              fontSize: 13,
             ),
           ),
         ],
